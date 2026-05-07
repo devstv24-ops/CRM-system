@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEAL FLOW · UAE CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#08090c;--s1:#0f1117;--s2:#161a24;--s3:#1e2435;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf2;--dim:#6b738f;
+  --won:#22c55e;--won-bg:rgba(34,197,94,0.11);
+  --lost:#ef4444;--lost-bg:rgba(239,68,68,0.11);
+  --pause:#f59e0b;--pause-bg:rgba(245,158,11,0.11);
+  --new:#38bdf8;--new-bg:rgba(56,189,248,0.11);
+  --contract:#a78bfa;--contract-bg:rgba(167,139,250,0.11);
+  --invoice:#fb923c;--invoice-bg:rgba(251,146,60,0.11);
+  --work:#34d399;--work-bg:rgba(52,211,153,0.11);
+  --gold:#c9a84c;--gold2:#e8c96a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+header{position:sticky;top:0;z-index:50;background:rgba(8,9,12,0.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 28px;gap:16px}
+.logo{font-family:'Bebas Neue';font-size:20px;letter-spacing:3px;color:var(--gold)}
+.logo span{font-family:'DM Mono';font-size:11px;color:var(--dim);letter-spacing:.08em;margin-left:4px}
+.save-badge{font-family:'DM Mono';font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);color:var(--dim);transition:all .3s}
+.save-badge.saving{color:var(--pause);border-color:rgba(245,158,11,.35)}
+.save-badge.ok{color:var(--won);border-color:rgba(34,197,94,.35)}
+.save-badge.err{color:var(--lost);border-color:rgba(239,68,68,.35)}
+.ml{margin-left:auto}
+.btn-p{display:inline-flex;align-items:center;gap:6px;padding:7px 18px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#7a5010);border:none;color:#060600;font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn-p:hover{opacity:.85}
+
+.setup-banner{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px;position:relative;z-index:1}
+.setup-banner.hidden{display:none}
+.setup-title{color:var(--gold2);font-weight:600;margin-bottom:4px}
+.setup-desc{font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:10px}
+.setup-row{display:flex;gap:8px;flex-wrap:wrap}
+.setup-row input{flex:1;min-width:200px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'DM Mono';font-size:12px;outline:none}
+.setup-row input:focus{border-color:var(--gold)}
+.btn-connect{padding:7px 16px;border-radius:8px;background:var(--gold);border:none;color:#060600;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans';white-space:nowrap}
+.btn-local{padding:7px 14px;border-radius:8px;background:transparent;border:1px solid var(--border2);color:var(--dim);font-size:12px;cursor:pointer;font-family:'DM Sans';white-space:nowrap}
+
+main{position:relative;z-index:1;padding:22px 28px;max-width:1400px;margin:0 auto}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 18px;border-top:2px solid transparent}
+.kpi.k-won{border-top-color:var(--won)}.kpi.k-lost{border-top-color:var(--lost)}.kpi.k-pause{border-top-color:var(--pause)}.kpi.k-pipe{border-top-color:var(--new)}.kpi.k-w{border-top-color:var(--gold)}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.kpi-val{font-family:'Bebas Neue';font-size:26px;letter-spacing:1px;line-height:1}
+.kpi.k-won .kpi-val{color:var(--won)}.kpi.k-lost .kpi-val{color:var(--lost)}.kpi.k-pause .kpi-val{color:var(--pause)}.kpi.k-pipe .kpi-val{color:var(--new)}.kpi.k-w .kpi-val{color:var(--gold2)}
+.kpi-aed{font-family:'DM Mono';font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:.02em}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{padding:5px 13px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--dim);font-family:'DM Sans';font-size:12px;cursor:pointer;transition:all .15s;font-weight:500}
+.tab:hover,.tab.active{border-color:var(--gold);color:var(--gold2);background:rgba(201,168,76,0.08)}
+.tab.cf-tab.active{border-color:#1D9E75;color:#34d399;background:rgba(29,158,117,0.1)}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead tr{background:var(--s2)}
+th{padding:10px 13px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--s2)}
+td{padding:12px 13px;font-size:13px;vertical-align:middle}
+.td-name{font-weight:600}
+.td-dim{color:var(--dim);font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-mono{font-family:'DM Mono';font-size:12px;font-weight:500}
+.td-acts{display:flex;gap:5px;opacity:0;transition:opacity .15s}
+tbody tr:hover .td-acts{opacity:1}
+.td-aed{display:block;font-size:10px;color:var(--dim);font-family:'DM Mono';margin-top:1px}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge.won{background:var(--won-bg);color:var(--won)}.badge.won::before{background:var(--won)}
+.badge.lost{background:var(--lost-bg);color:var(--lost)}.badge.lost::before{background:var(--lost)}
+.badge.pause{background:var(--pause-bg);color:var(--pause)}.badge.pause::before{background:var(--pause)}
+.badge.new{background:var(--new-bg);color:var(--new)}.badge.new::before{background:var(--new)}
+.badge.contract{background:var(--contract-bg);color:var(--contract)}.badge.contract::before{background:var(--contract)}
+.badge.invoice{background:var(--invoice-bg);color:var(--invoice)}.badge.invoice::before{background:var(--invoice)}
+.badge.work{background:var(--work-bg);color:var(--work)}.badge.work::before{background:var(--work)}
+
+.prob-row{display:flex;align-items:center;gap:6px}
+.prob-bar{width:40px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prob-fill{height:100%;border-radius:2px}
+
+.ibtn{width:27px;height:27px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;font-family:'DM Sans'}
+.ibtn:hover{border-color:var(--border2);color:var(--text);background:var(--s3)}
+.ibtn.del:hover{border-color:var(--lost);color:var(--lost)}
+
+.empty{text-align:center;padding:52px 24px;color:var(--dim)}
+.empty-ico{font-size:32px;margin-bottom:10px;opacity:.35}
+
+/* ── ARCHIVE ── */
+.arch-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px}
+.arch-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.arch-client{font-weight:600;font-size:14px}
+.arch-date{font-size:12px;color:var(--dim);margin-left:auto}
+.arch-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.arch-tbl td{padding:4px 0;color:var(--dim)}
+.arch-tbl .mono{font-family:'DM Mono'}
+.arch-total{text-align:right;font-size:14px;font-weight:600;color:var(--won);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)}
+.arch-pays{margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.arch-pay-row{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);padding:3px 0}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:16px;width:700px;max-width:100%;max-height:90vh;overflow-y:auto;transform:translateY(16px) scale(.97);transition:transform .22s;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.overlay.open .modal{transform:translateY(0) scale(1)}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.m-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--gold2)}
+.m-tabs{display:flex;gap:3px}
+.mtab{padding:4px 13px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;font-family:'DM Sans';transition:all .15s;font-weight:500}
+.mtab.active{background:var(--s3);color:var(--text);border-color:var(--border2)}
+.mclose{margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.mclose:hover{border-color:var(--lost);color:var(--lost)}
+.mb{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+.mpanel{display:none;flex-direction:column;gap:14px}
+.mpanel.active{display:flex}
+.mf{padding:16px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn-cancel{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--dim);font-family:'DM Sans';font-size:13px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-save{padding:8px 22px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#7a5010);border:none;color:#060600;font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-save:hover{opacity:.85}
+
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fc{display:flex;flex-direction:column;gap:5px}
+.fc.span2{grid-column:1/-1}
+.fc label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.fc input,.fc select,.fc textarea{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none;transition:border-color .15s;width:100%}
+.fc input:focus,.fc select:focus,.fc textarea:focus{border-color:var(--gold)}
+.fc textarea{resize:vertical;min-height:64px;line-height:1.5}
+.fc select option{background:var(--s2)}
+
+/* currency toggle */
+.cur-toggle{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border2)}
+.cur-btn{flex:1;padding:9px 0;background:transparent;border:none;color:var(--dim);font-family:'DM Mono';font-size:13px;cursor:pointer;transition:all .15s;font-weight:500}
+.cur-btn.active{background:var(--gold);color:#060600}
+
+/* price preview */
+.price-preview{font-size:11px;color:var(--dim);font-family:'DM Mono';margin-top:3px;min-height:14px}
+
+.items-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.items-tbl th{padding:6px 8px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--border)}
+.items-tbl td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.items-tbl tr:last-child td{border-bottom:none}
+.items-tbl input{background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'DM Sans';font-size:12px;width:100%;outline:none;transition:border-color .15s}
+.items-tbl input:focus{border-color:var(--gold)}
+.item-sum{font-family:'DM Mono';font-size:12px;font-weight:500;white-space:nowrap;color:var(--text)}
+.items-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 0}
+.items-total{font-size:13px;font-family:'DM Mono';color:var(--gold2);font-weight:500}
+.btn-link{background:none;border:none;color:var(--gold);cursor:pointer;font-size:12px;font-family:'DM Sans';padding:0;text-decoration:underline;text-underline-offset:3px}
+.btn-link:hover{opacity:.8}
+
+.pay-item{display:grid;grid-template-columns:1fr 120px 130px auto auto;gap:8px;align-items:end;margin-bottom:10px}
+.pay-toggle{font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;border:1px solid;font-family:'DM Sans';font-weight:600;background:transparent;white-space:nowrap;transition:all .15s}
+.pay-toggle.pending{color:var(--pause);border-color:rgba(245,158,11,.4)}
+.pay-toggle.paid{color:var(--won);border-color:rgba(34,197,94,.4)}
+.pay-summary{font-size:12px;color:var(--dim);padding-top:10px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap}
+.pay-summary strong{font-family:'DM Mono'}
+
+/* ── CASH FLOW ── */
+.cf-wrap{display:flex;flex-direction:column;gap:16px}
+
+.cf-bank-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.cf-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-top:2px solid transparent}
+.cf-card.bank{border-top-color:#1D9E75}
+.cf-card.inc{border-top-color:var(--new)}
+.cf-card.out{border-top-color:var(--lost)}
+.cf-card.net-pos{border-top-color:var(--won)}
+.cf-card.net-neg{border-top-color:var(--lost)}
+.cf-card-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.cf-card-val{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;line-height:1}
+.cf-card-sub{font-size:10px;font-family:'DM Mono';color:var(--dim);margin-top:3px}
+.cf-green{color:#1D9E75}.cf-red{color:var(--lost)}.cf-blue{color:var(--new)}.cf-gold{color:var(--gold2)}
+
+.cf-section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cf-section-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.cf-add-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--dim);font-size:11px;font-family:'DM Sans';cursor:pointer;transition:all .15s}
+.cf-add-btn:hover{border-color:#1D9E75;color:#34d399}
+
+/* week rows */
+.cf-weeks{display:flex;flex-direction:column;gap:6px}
+.cf-week{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s}
+.cf-week.danger{border-color:rgba(239,68,68,.35)}
+.cf-week.warning{border-color:rgba(245,158,11,.35)}
+.cf-week-hd{display:grid;grid-template-columns:200px 1fr 1fr 1fr 150px 28px;align-items:center;gap:0;padding:10px 14px;cursor:pointer;user-select:none}
+.cf-week-hd:hover{background:rgba(255,255,255,0.018)}
+.cf-wlabel strong{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:1px}
+.cf-wlabel span{font-size:11px;color:var(--dim);font-family:'DM Mono'}
+.cf-wcol{padding:0 10px}
+.cf-wcol-lbl{font-size:9px;color:var(--dim);letter-spacing:.4px;margin-bottom:2px;font-family:'DM Mono';text-transform:uppercase}
+.cf-wcol-val{font-family:'DM Mono';font-size:12px;font-weight:500}
+.col-in{color:#1D9E75}.col-out{color:var(--lost)}.col-debt{color:var(--pause)}
+.cf-balance-pill{padding:4px 12px;border-radius:20px;font-family:'DM Mono';font-size:12px;font-weight:500;text-align:center;white-space:nowrap}
+.pill-ok{background:rgba(29,158,117,.12);color:#1D9E75}
+.pill-warn{background:rgba(245,158,11,.12);color:var(--pause)}
+.pill-danger{background:rgba(239,68,68,.12);color:var(--lost)}
+.cf-chevron{color:var(--dim);font-size:10px;transition:transform .2s;text-align:center}
+.cf-week.open .cf-chevron{transform:rotate(180deg)}
+
+.cf-week-body{display:none;border-top:1px solid var(--border);padding:12px 14px}
+.cf-week.open .cf-week-body{display:block}
+
+.cf-tx-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.cf-tx{display:grid;grid-template-columns:100px 1fr 100px 80px 110px 26px;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border-radius:7px;border:1px solid transparent;transition:border-color .15s}
+.cf-tx:hover{border-color:var(--border2)}
+.cf-tx-date{font-family:'DM Mono';font-size:11px;color:var(--dim)}
+.cf-tx-desc{font-size:12px;color:var(--text)}
+.cf-tx-amt{font-family:'DM Mono';font-size:12px;font-weight:500;text-align:right}
+.amt-in{color:#1D9E75}.amt-out{color:var(--lost)}.amt-debt{color:var(--pause)}
+.cf-tx-badge{padding:2px 7px;border-radius:4px;font-size:9px;font-family:'DM Mono';text-align:center;white-space:nowrap}
+.b-capex{background:rgba(167,139,250,.15);color:#a78bfa}
+.b-opex{background:rgba(56,189,248,.12);color:var(--new)}
+.b-debt{background:rgba(245,158,11,.12);color:var(--pause)}
+.b-income{background:rgba(29,158,117,.12);color:#1D9E75}
+.b-crm{background:rgba(232,201,106,.1);color:var(--gold2)}
+.cf-tx-src{font-size:10px;color:var(--dim)}
+.cf-del-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;transition:all .15s}
+.cf-del-btn:hover{color:var(--lost);background:var(--lost-bg)}
+
+.cf-quick-add{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.cf-quick-btn{padding:4px 9px;background:transparent;border:1px dashed var(--border2);border-radius:6px;color:var(--dim);font-size:11px;cursor:pointer;transition:all .15s;font-family:'DM Sans'}
+.cf-quick-btn:hover{border-color:#1D9E75;color:#34d399}
+.cf-empty-week{padding:6px 8px;font-size:11px;color:var(--dim);font-style:italic}
+
+/* CF modal */
+.cf-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.cf-overlay.open{opacity:1;pointer-events:all}
+.cf-modal{background:var(--s1);border:1px solid var(--border2);border-radius:14px;width:460px;max-width:100%;box-shadow:0 40px 80px rgba(0,0,0,.6);transform:translateY(12px) scale(.97);transition:transform .2s}
+.cf-overlay.open .cf-modal{transform:none}
+.cf-mh{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cf-mtitle{font-family:'Bebas Neue';font-size:16px;letter-spacing:2px;color:#34d399}
+.cf-mb{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.cf-mf{padding:12px 20px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.cf-save-btn{padding:8px 20px;border-radius:8px;background:#1D9E75;border:none;color:#fff;font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.cf-save-btn:hover{opacity:.85}
+
+/* ── CF CHART ── */
+.cf-chart-wrap{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative}
+.cf-chart-title{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.cf-chart-legend{display:flex;gap:14px}
+.cf-legend-dot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim)}
+.cf-legend-dot::before{content:'';width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.leg-balance::before{background:#1D9E75}
+.leg-in::before{background:#38bdf8}
+.leg-out::before{background:#ef4444}
+canvas#cfChart{width:100%!important;max-height:180px}
+
+/* ── CF MONTH FILTER ── */
+.cf-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.cf-month-strip{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.cf-month-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--dim);font-size:11px;font-family:'DM Sans';cursor:pointer;transition:all .15s;white-space:nowrap}
+.cf-month-btn:hover{border-color:#1D9E75;color:#34d399}
+.cf-month-btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff;font-weight:600}
+.cf-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.07);color:var(--gold2);font-size:12px;font-family:'DM Sans';cursor:pointer;transition:all .15s;white-space:nowrap}
+.cf-pdf-btn:hover{background:rgba(201,168,76,.14)}
+
+/* loading */
+.loading{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.loading.hidden{opacity:0;pointer-events:none}
+.loading-logo{font-family:'Bebas Neue';font-size:32px;letter-spacing:4px;color:var(--gold)}
+.dots{display:flex;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gold);opacity:.3;animation:ld 1.2s ease infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes ld{0%,80%,100%{opacity:.2;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-logo">DEAL FLOW</div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div style="font-size:12px;color:var(--dim);font-family:'DM Mono'">Завантаження...</div>
+</div>
+
+<header>
+  <div class="logo">DEAL FLOW <span>· UAE OPS</span></div>
+  <div class="save-badge" id="saveBadge">Ініціалізація...</div>
+  <div class="ml"><button class="btn-p" onclick="openDeal(null)">＋ Нова угода</button></div>
+</header>
+
+<main>
+  <div class="setup-banner" id="setupBanner">
+    <div class="setup-title">⚙️ Підключіть Google Sheets для збереження даних</div>
+    <div class="setup-desc">Вставте URL вашого Google Apps Script.</div>
+    <div class="setup-row">
+      <input id="scriptUrl" placeholder="https://script.google.com/macros/s/ВАШІ_ДАНІ.../exec" type="url">
+      <button class="btn-connect" onclick="connectScript()">Підключити</button>
+      <button class="btn-local" onclick="useLocal()">Без хмари (локально)</button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi k-won"><div class="kpi-lbl">Підтверджено</div><div class="kpi-val" id="kWon">$0</div><div class="kpi-aed" id="kWonA">AED 0</div><div style="font-size:11px;color:var(--dim);margin-top:2px" id="kWonC">0 угод</div></div>
+    <div class="kpi k-pipe"><div class="kpi-lbl">Pipeline (нові)</div><div class="kpi-val" id="kPipe">$0</div><div class="kpi-aed" id="kPipeA">AED 0</div><div style="font-size:11px;color:var(--dim);margin-top:2px" id="kPipeC">0 угод</div></div>
+    <div class="kpi k-pause"><div class="kpi-lbl">На паузі</div><div class="kpi-val" id="kPause">$0</div><div class="kpi-aed" id="kPauseA">AED 0</div><div style="font-size:11px;color:var(--dim);margin-top:2px" id="kPauseC">0 угод</div></div>
+    <div class="kpi k-lost"><div class="kpi-lbl">Програно</div><div class="kpi-val" id="kLost">$0</div><div class="kpi-aed" id="kLostA">AED 0</div><div style="font-size:11px;color:var(--dim);margin-top:2px" id="kLostC">0 угод</div></div>
+    <div class="kpi k-w"><div class="kpi-lbl">Зважений pipeline</div><div class="kpi-val" id="kW">$0</div><div class="kpi-aed" id="kWA">AED 0</div><div style="font-size:11px;color:var(--dim);margin-top:2px">з урахуванням імовірності</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" onclick="setFilter('all',this)">Всі</button>
+      <button class="tab" onclick="setFilter('new',this)">Нові</button>
+      <button class="tab" onclick="setFilter('contract',this)">Договір</button>
+      <button class="tab" onclick="setFilter('invoice',this)">Інвойс</button>
+      <button class="tab" onclick="setFilter('work',this)">В роботі</button>
+      <button class="tab" onclick="setFilter('pause',this)">Пауза</button>
+      <button class="tab" onclick="setFilter('won',this)">Виграно</button>
+      <button class="tab" onclick="setFilter('lost',this)">Програно</button>
+      <button class="tab" onclick="setFilter('archive',this)">📁 Архів</button>
+      <button class="tab cf-tab" onclick="setFilter('cashflow',this)">💰 Cash Flow</button>
+    </div>
+  </div>
+
+  <div id="mainView">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Замовник</th>
+          <th style="width:14%">Опис</th>
+          <th style="width:13%">Сума угоди</th>
+          <th style="width:11%">Отримано</th>
+          <th style="width:12%">Статус</th>
+          <th style="width:10%">Імовірність</th>
+          <th style="width:9%">Дата</th>
+          <th style="width:4%"></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyState" style="display:none">
+        <div class="empty-ico">📋</div>
+        <div style="font-size:14px">Угод не знайдено</div>
+        <div style="font-size:12px;margin-top:6px">Натисніть «＋ Нова угода» щоб почати</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="archiveView" style="display:none"><div id="archiveList"></div></div>
+  <div id="cashflowView" style="display:none"><div id="cashflowContent"></div></div>
+</main>
+
+<!-- DEAL MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mh">
+      <div class="m-title" id="mTitle">НОВА УГОДА</div>
+      <div class="m-tabs">
+        <button class="mtab active" onclick="switchTab('info',this)">Основне</button>
+        <button class="mtab" onclick="switchTab('items',this)">Позиції</button>
+        <button class="mtab" onclick="switchTab('pay',this)">Оплата</button>
+      </div>
+      <button class="mclose" onclick="safeClose()">✕</button>
+    </div>
+    <div class="mb">
+      <div class="mpanel active" id="panel-info">
+        <div class="fg">
+          <div class="fc"><label>Замовник *</label><input id="fClient" placeholder="Назва або ім'я"></div>
+          <div class="fc"><label>Статус</label>
+            <select id="fStatus" onchange="onStatusChange()">
+              <option value="new">Нова пропозиція</option>
+              <option value="contract">Підготувати договір</option>
+              <option value="invoice">Виставити інвойс</option>
+              <option value="work">В роботі</option>
+              <option value="pause">На паузі</option>
+              <option value="won">Виграно</option>
+              <option value="lost">Програно</option>
+            </select>
+          </div>
+          <div class="fc"><label>Вид послуг</label>
+            <select id="fServiceType">
+              <option value="">— Оберіть —</option>
+              <option value="Капітальний ремонт">Капітальний ремонт</option>
+              <option value="Ремонт">Ремонт</option>
+              <option value="НТП">НТП</option>
+              <option value="Продаж">Продаж</option>
+              <option value="Під 1 категорію">Під 1 категорію</option>
+            </select>
+          </div>
+          <div class="fc"><label>Валюта угоди</label>
+            <div class="cur-toggle">
+              <button class="cur-btn active" id="curUSD" onclick="setCurrency('USD')">USD</button>
+              <button class="cur-btn" id="curAED" onclick="setCurrency('AED')">AED</button>
+            </div>
+          </div>
+          <div class="fc span2"><label>Опис / тип роботи</label><input id="fDesc" placeholder="напр. Ремонт КАУ-115АМ, 5 одиниць"></div>
+          <div class="fc">
+            <label id="fPriceLbl">Ціна продажу, USD</label>
+            <input id="fPrice" type="number" placeholder="0" min="0" oninput="updatePricePreview()">
+            <div class="price-preview" id="pricePreview"></div>
+          </div>
+          <div class="fc"><label>Імовірність, %</label><input id="fProb" type="number" placeholder="50" min="0" max="100"></div>
+          <div class="fc"><label>Дата</label><input id="fDate" type="date"></div>
+          <div class="fc"><label>Контактна особа</label><input id="fContact" placeholder="Ім'я, телефон або email"></div>
+          <div class="fc span2"><label>Нотатки</label><textarea id="fNotes" placeholder="Умови, деталі, нагадування..."></textarea></div>
+          <div class="fc span2" id="projectNumRow" style="display:none">
+            <label>Номер проекту</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input id="fProjectNum" readonly style="font-family:DM Mono,monospace;font-size:14px;font-weight:500;color:var(--gold2);background:var(--s3);cursor:default;flex:1">
+              <span id="projectNumStatus" style="font-size:11px;white-space:nowrap;color:var(--dim)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mpanel" id="panel-items">
+        <table class="items-tbl">
+          <thead><tr>
+            <th style="width:40%">Назва позиції</th>
+            <th style="width:22%">Ціна за од.</th>
+            <th style="width:13%">К-ть</th>
+            <th style="width:20%">Сума</th>
+            <th style="width:5%"></th>
+          </tr></thead>
+          <tbody id="itemsTbody"></tbody>
+        </table>
+        <div class="items-footer">
+          <button class="btn-link" onclick="addItem()">＋ Додати позицію</button>
+          <div class="items-total">Разом: <span id="itemsTotal">$0</span></div>
+        </div>
+        <div style="margin-top:16px;background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:12px">💰 Калькулятор оплат</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--dim)">Загальна сума:</span>
+            <span id="calcTotal" style="font-family:DM Mono,monospace;font-size:14px;font-weight:500;color:var(--gold2)">$0</span>
+          </div>
+          <div id="calcParts" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn-link" onclick="addCalcPart()">＋ Додати частину</button>
+            <span id="calcRemainder" style="font-size:12px;color:var(--dim);margin-left:auto"></span>
+          </div>
+          <button onclick="calcToPayments()" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#7a5010);border:none;color:#060600;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;cursor:pointer">Перенести в Оплату →</button>
+        </div>
+      </div>
+      <div class="mpanel" id="panel-pay">
+        <div id="payList"></div>
+        <button class="btn-link" onclick="addPayment()">＋ Додати платіж</button>
+        <div class="pay-summary" id="paySummary"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-cancel" onclick="safeClose()">Скасувати</button>
+      <button class="btn-save" onclick="saveDeal()">Зберегти угоду</button>
+    </div>
+  </div>
+</div>
+
+<!-- CASH FLOW ADD MODAL -->
+<div class="cf-overlay" id="cfOverlay">
+  <div class="cf-modal">
+    <div class="cf-mh">
+      <div class="cf-mtitle">// НОВА ТРАНЗАКЦІЯ</div>
+      <button class="mclose" onclick="closeCfModal()">✕</button>
+    </div>
+    <div class="cf-mb">
+      <div class="fg">
+        <div class="fc">
+          <label>Дата</label>
+          <input type="date" id="cfDate">
+        </div>
+        <div class="fc">
+          <label>Тип</label>
+          <select id="cfType">
+            <option value="expense-opex">Витрата — OPEX</option>
+            <option value="expense-capex">Витрата — CAPEX</option>
+            <option value="debt">Борг постачальнику</option>
+            <option value="income">Надходження</option>
+          </select>
+        </div>
+        <div class="fc span2">
+          <label>Опис</label>
+          <input id="cfDesc" placeholder="напр. Зарплата травень, КАУ-115АМ передплата...">
+        </div>
+        <div class="fc">
+          <label>Сума</label>
+          <input type="number" id="cfAmount" placeholder="0" min="0">
+        </div>
+        <div class="fc">
+          <label>Валюта</label>
+          <div class="cur-toggle">
+            <button class="cur-btn active" id="cfCurUSD" onclick="setCfCurrency('USD')">USD</button>
+            <button class="cur-btn" id="cfCurAED" onclick="setCfCurrency('AED')">AED</button>
+          </div>
+        </div>
+        <div class="fc span2">
+          <label>Нотатка</label>
+          <input id="cfNote" placeholder="необов'язково">
+        </div>
+      </div>
+    </div>
+    <div class="cf-mf">
+      <button class="btn-cancel" onclick="closeCfModal()">Скасувати</button>
+      <button class="cf-save-btn" onclick="saveCfTx()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════
+const PROBS={new:30,contract:60,invoice:75,work:100,pause:40,won:100,lost:0};
+const LABELS={new:'Нова',contract:'Договір',invoice:'Інвойс',work:'В роботі',pause:'Пауза',won:'Виграно',lost:'Програно'};
+const LSKEY='crm_uae_v3';
+const CFKEY='avronis_cf_v1';
+const URLKEY='crm_script_url';
+const FX=3.67; // 1 USD = 3.67 AED
+
+const HARDCODED_URL='https://script.google.com/macros/s/AKfycbxE9K3QNNkWsCJxvg0D2QtIaKu5Q77BSi9smzeYxd36AN4MH-5eDziqiPbfeGw9IzeDUw/exec';
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let deals=[];
+let cfTxs=[];           // планові транзакції cash flow
+let bankBalanceAED=null; // залишок з Google Sheets
+let editId=null,editItems=[],editPayments=[];
+let editCurrency='USD';
+let cfCurrency='AED';
+let filter='all';
+let scriptUrl=localStorage.getItem(URLKEY)||'';
+let calcParts=[];
+let cfModalDate=null;
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+async function init(){
+  if(HARDCODED_URL&&HARDCODED_URL.includes('script.google.com')){
+    scriptUrl=HARDCODED_URL;
+    localStorage.setItem(URLKEY,HARDCODED_URL);
+  }
+  loadCfLocal();
+  if(scriptUrl){
+    document.getElementById('setupBanner').classList.add('hidden');
+    await loadFromSheets();
+  } else {
+    setBadge('Не підключено','err');
+    deals=[];render();hide();
+  }
+}
+
+function hide(){document.getElementById('loading').classList.add('hidden')}
+function setBadge(t,c){const b=document.getElementById('saveBadge');b.textContent=t;b.className='save-badge '+c}
+
+// ═══════════════════════════════════════════
+//  CURRENCY HELPERS
+// ═══════════════════════════════════════════
+// Convert any amount to USD
+function toUSD(amount,currency){
+  if(currency==='AED') return amount/FX;
+  return amount;
+}
+// Convert any amount to AED
+function toAED(amount,currency){
+  if(currency==='USD') return amount*FX;
+  return amount;
+}
+function fmtUSD(n){if(!n&&n!==0)return'—';return'$'+Math.round(Math.abs(n)).toLocaleString('en-US')}
+function fmtAED(n){if(!n&&n!==0)return'—';return'AED '+Math.round(Math.abs(n)).toLocaleString('en-US')}
+function fmtCur(amount,currency){
+  if(currency==='AED') return 'AED '+Math.round(Math.abs(amount)).toLocaleString('en-US');
+  return '$'+Math.round(Math.abs(amount)).toLocaleString('en-US');
+}
+// Deal total always in USD equivalent
+function dealTotalUSD(d){
+  const raw=(d.items||[]).reduce((a,i)=>a+(Number(i.total)||0),0)||d.price||0;
+  return toUSD(raw,d.currency||'USD');
+}
+function dealPaidUSD(d){
+  const raw=(d.payments||[]).filter(p=>p.paid).reduce((a,p)=>a+(Number(p.amount)||0),0);
+  return toUSD(raw,d.currency||'USD');
+}
+
+// ═══════════════════════════════════════════
+//  GOOGLE SHEETS
+// ═══════════════════════════════════════════
+async function loadFromSheets(){
+  setBadge('Завантаження...','saving');
+  try{
+    const r=await fetch(scriptUrl+'?action=load&t='+Date.now());
+    const text=await r.text();
+    let parsed;
+    try{parsed=JSON.parse(text);}catch(e){parsed={};}
+    if(Array.isArray(parsed)) deals=parsed;
+    else if(parsed.deals&&Array.isArray(parsed.deals)) deals=parsed.deals;
+    else deals=[];
+    deals=deals.filter(d=>d&&typeof d==='object'&&d.client);
+
+    // Спробувати підтягнути залишок банку
+    if(parsed.bank_aed!==undefined) bankBalanceAED=parseFloat(parsed.bank_aed)||null;
+
+    setBadge('● Збережено в Google','ok');
+    localStorage.setItem(LSKEY,JSON.stringify(deals));
+    render();
+  }catch(e){
+    setBadge('● Локально (офлайн)','err');
+    const local=localStorage.getItem(LSKEY);
+    try{deals=local?JSON.parse(local).filter(d=>d&&d.client):[];}catch(e2){deals=[];}
+    render();
+  }
+  hide();
+}
+
+async function persist(){
+  setBadge('Збереження...','saving');
+  localStorage.setItem(LSKEY,JSON.stringify(deals));
+  if(!scriptUrl){setBadge('● Локально','err');return;}
+  try{
+    const encoded=encodeURIComponent(JSON.stringify(deals));
+    const r=await fetch(scriptUrl+'?action=save&data='+encoded);
+    const d=await r.json();
+    if(d.status==='ok') setBadge('● Збережено в Google','ok');
+    else setBadge('● Помилка: '+(d.error||'невідома'),'err');
+  }catch(e){setBadge('● Локально (офлайн)','err');}
+}
+
+function connectScript(){
+  const url=document.getElementById('scriptUrl').value.trim();
+  if(!url.includes('script.google.com')){alert('Невірний URL.');return;}
+  scriptUrl=url;localStorage.setItem(URLKEY,url);
+  document.getElementById('setupBanner').classList.add('hidden');
+  loadFromSheets();
+}
+function useLocal(){
+  document.getElementById('setupBanner').classList.add('hidden');
+  const local=localStorage.getItem(LSKEY);
+  try{deals=local?JSON.parse(local).filter(d=>d&&d.client):[];}catch(e){deals=[];}
+  setBadge('● Локально','err');render();hide();
+}
+
+// ═══════════════════════════════════════════
+//  KPI
+// ═══════════════════════════════════════════
+function updateKPIs(){
+  const confirmed=deals.filter(d=>['won','work','contract','invoice'].includes(d.status));
+  const lost=deals.filter(d=>d.status==='lost');
+  const pause=deals.filter(d=>d.status==='pause');
+  const pipe=deals.filter(d=>d.status==='new');
+  const sUSD=arr=>arr.reduce((a,d)=>a+dealTotalUSD(d),0);
+  const weighted=deals.filter(d=>!['lost','pause'].includes(d.status))
+    .reduce((a,d)=>a+dealTotalUSD(d)*(Number(d.prob)||0)/100,0);
+
+  const sets=[
+    ['kWon','kWonA','kWonC',confirmed],
+    ['kPipe','kPipeA','kPipeC',pipe],
+    ['kPause','kPauseA','kPauseC',pause],
+    ['kLost','kLostA','kLostC',lost],
+  ];
+  sets.forEach(([uid,aid,cid,arr])=>{
+    const u=sUSD(arr);
+    document.getElementById(uid).textContent=fmtUSD(u);
+    document.getElementById(aid).textContent=fmtAED(u*FX);
+    document.getElementById(cid).textContent=arr.length+' угод';
+  });
+  document.getElementById('kW').textContent=fmtUSD(weighted);
+  document.getElementById('kWA').textContent=fmtAED(weighted*FX);
+}
+
+// ═══════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════
+function render(){
+  updateKPIs();
+  const isArch=filter==='archive';
+  const isCash=filter==='cashflow';
+  document.getElementById('mainView').style.display=(isArch||isCash)?'none':'block';
+  document.getElementById('archiveView').style.display=isArch?'block':'none';
+  document.getElementById('cashflowView').style.display=isCash?'block':'none';
+  if(isArch){renderArchive();return;}
+  if(isCash){renderCashflow();return;}
+
+  const list=filter==='all'?deals:deals.filter(d=>d.status===filter);
+  const tbody=document.getElementById('tbody');
+  const empty=document.getElementById('emptyState');
+  if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+
+  tbody.innerHTML=list.map(d=>{
+    const totalUSD=dealTotalUSD(d);
+    const paidUSD=dealPaidUSD(d);
+    const cur=d.currency||'USD';
+    const rawTotal=(d.items||[]).reduce((a,i)=>a+(Number(i.total)||0),0)||d.price||0;
+    const rawPaid=(d.payments||[]).filter(p=>p.paid).reduce((a,p)=>a+(Number(p.amount)||0),0);
+
+    return`<tr onclick="openDeal(${d.id})">
+      <td>
+        <div class="td-name">${esc(d.client)}${d.projectNum?` <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--gold);background:rgba(201,168,76,0.12);padding:1px 6px;border-radius:4px">${d.projectNum}</span>`:''}</div>
+        ${d.notes?`<div class="td-dim">${esc(d.notes.substring(0,48))}${d.notes.length>48?'…':''}</div>`:''}
+      </td>
+      <td style="color:var(--dim);font-size:12px">${d.serviceType?`<span style="color:var(--gold);font-size:11px;font-weight:600">${esc(d.serviceType)}</span>${d.desc?' · '+esc(d.desc):''}`:esc(d.desc)||'—'}</td>
+      <td class="td-mono">
+        ${fmtCur(rawTotal,cur)}
+        ${cur==='AED'?`<span class="td-aed">≈ ${fmtUSD(totalUSD)}</span>`:`<span class="td-aed">${fmtAED(totalUSD*FX)}</span>`}
+      </td>
+      <td class="td-mono" style="color:${rawPaid>0?'var(--won)':'var(--dim)'}">
+        ${rawPaid>0?fmtCur(rawPaid,cur):'—'}
+        ${rawPaid>0&&cur==='AED'?`<span class="td-aed">≈ ${fmtUSD(paidUSD)}</span>`:''}
+      </td>
+      <td><span class="badge ${d.status}">${LABELS[d.status]}</span></td>
+      <td><div class="prob-row"><div class="prob-bar"><div class="prob-fill" style="width:${d.prob||0}%;background:${probColor(d.prob||0)}"></div></div><span class="td-mono" style="font-size:11px;color:${probColor(d.prob||0)}">${d.prob||0}%</span></div></td>
+      <td style="color:var(--dim);font-size:12px">${d.date?new Date(d.date+'T00:00:00').toLocaleDateString('uk-UA'):'—'}</td>
+      <td><div class="td-acts"><button class="ibtn del" onclick="event.stopPropagation();delDeal(${d.id})">✕</button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderArchive(){
+  const won=deals.filter(d=>d.status==='won');
+  const el=document.getElementById('archiveList');
+  if(!won.length){el.innerHTML='<div class="empty"><div class="empty-ico">📁</div><div>Архів порожній.</div></div>';return;}
+  el.innerHTML=won.map(d=>{
+    const cur=d.currency||'USD';
+    const totalUSD=dealTotalUSD(d),paidUSD=dealPaidUSD(d);
+    const rawTotal=(d.items||[]).reduce((a,i)=>a+(Number(i.total)||0),0)||d.price||0;
+    const rawPaid=(d.payments||[]).filter(p=>p.paid).reduce((a,p)=>a+(Number(p.amount)||0),0);
+    const items=d.items||[],pays=d.payments||[];
+    return`<div class="arch-card">
+      <div class="arch-head">
+        <span class="badge won">Виграно</span>
+        <span class="arch-client">${esc(d.client)}</span>
+        ${d.desc?`<span style="font-size:12px;color:var(--dim)">· ${esc(d.desc)}</span>`:''}
+        <span style="font-size:11px;font-family:DM Mono,monospace;color:var(--gold);background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px">${cur}</span>
+        <span class="arch-date">${d.date?new Date(d.date+'T00:00:00').toLocaleDateString('uk-UA'):''}</span>
+      </div>
+      ${items.length?`<table class="arch-tbl">
+        ${items.map(i=>`<tr><td>${esc(i.name||'—')}</td><td>${fmtCur(i.unitPrice,cur)} × ${i.qty}</td><td style="text-align:right" class="mono">${fmtCur(i.total,cur)}</td></tr>`).join('')}
+      </table>`:''}
+      ${pays.length?`<div class="arch-pays">${pays.map(p=>`<div class="arch-pay-row"><span>${esc(p.label||'Платіж')}</span><span>${p.date?new Date(p.date+'T00:00:00').toLocaleDateString('uk-UA'):''}</span><span style="color:${p.paid?'var(--won)':'var(--pause)'}">${fmtCur(p.amount,cur)} ${p.paid?'✓':'очікується'}</span></div>`).join('')}</div>`:''}
+      <div class="arch-total">${fmtCur(rawTotal,cur)} ${cur==='AED'?`(≈${fmtUSD(totalUSD)})`:''} · Отримано: ${fmtCur(rawPaid,cur)}</div>
+    </div>`;
+  }).join('');
+}
+
+function probColor(p){return p>=75?'#22c55e':p>=50?'#f59e0b':p>=25?'#f97316':'#ef4444'}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+
+// ═══════════════════════════════════════════
+//  DEAL MODAL — currency
+// ═══════════════════════════════════════════
+function setCurrency(cur){
+  editCurrency=cur;
+  document.getElementById('curUSD').classList.toggle('active',cur==='USD');
+  document.getElementById('curAED').classList.toggle('active',cur==='AED');
+  document.getElementById('fPriceLbl').textContent='Ціна продажу, '+cur;
+  updatePricePreview();
+}
+
+function updatePricePreview(){
+  const val=parseFloat(document.getElementById('fPrice').value)||0;
+  const el=document.getElementById('pricePreview');
+  if(!val){el.textContent='';return;}
+  if(editCurrency==='USD') el.textContent='≈ AED '+Math.round(val*FX).toLocaleString('en-US');
+  else el.textContent='≈ $'+Math.round(val/FX).toLocaleString('en-US');
+}
+
+// ═══════════════════════════════════════════
+//  DEAL MODAL — open/close
+// ═══════════════════════════════════════════
+function openDeal(id){
+  editId=id;
+  const d=id?deals.find(x=>x.id===id):null;
+  document.getElementById('mTitle').textContent=id?'РЕДАГУВАТИ УГОДУ':'НОВА УГОДА';
+  document.getElementById('fClient').value=d?.client||'';
+  document.getElementById('fStatus').value=d?.status||'new';
+  document.getElementById('fServiceType').value=d?.serviceType||'';
+  document.getElementById('fDesc').value=d?.desc||'';
+  document.getElementById('fPrice').value=d?.price||'';
+  document.getElementById('fProb').value=d?.prob!==undefined?d.prob:PROBS[d?.status||'new'];
+  document.getElementById('fDate').value=d?.date||new Date().toISOString().slice(0,10);
+  document.getElementById('fContact').value=d?.contact||'';
+  document.getElementById('fNotes').value=d?.notes||'';
+  document.getElementById('fProjectNum').value=d?.projectNum||'';
+  document.getElementById('fStatus').dataset.prev=d?.status||'';
+
+  // currency
+  setCurrency(d?.currency||'USD');
+  updatePricePreview();
+
+  const prow=document.getElementById('projectNumRow');
+  const plbl=document.getElementById('projectNumStatus');
+  const pn=d?.projectNum||'';
+  if(pn){
+    prow.style.display='';
+    const s=d?.status||'';
+    if(s==='work'||s==='won'||s==='invoice'){plbl.textContent='✓ Підтверджено';plbl.style.color='var(--won)';}
+    else if(s==='contract'){plbl.textContent='⏳ Резерв';plbl.style.color='var(--pause)';}
+  } else {prow.style.display='none';}
+
+  calcParts=[];
+  editItems=JSON.parse(JSON.stringify(d?.items||[]));
+  editPayments=JSON.parse(JSON.stringify(d?.payments||[]));
+  switchTab('info',document.querySelector('.mtab'));
+  renderItems();renderPayments();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open')}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))safeClose();});
+function safeClose(){
+  const client=document.getElementById('fClient').value.trim();
+  if(client){if(!confirm('Закрити без збереження?'))return;}
+  closeModal();
+}
+function switchTab(name,btn){
+  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+function onStatusChange(){
+  const status=document.getElementById('fStatus').value;
+  document.getElementById('fProb').value=PROBS[status]||50;
+  updateProjectNumField(status);
+}
+function updateProjectNumField(status){
+  const row=document.getElementById('projectNumRow');
+  const input=document.getElementById('fProjectNum');
+  const lbl=document.getElementById('projectNumStatus');
+  const cur=input.value;
+  if(status==='contract'){
+    row.style.display='';
+    if(!cur)input.value=generateProjectNum();
+    lbl.textContent='⏳ Резерв';lbl.style.color='var(--pause)';
+  } else if(status==='work'||status==='won'||status==='invoice'){
+    if(cur){row.style.display='';lbl.textContent='✓ Підтверджено';lbl.style.color='var(--won)';}
+    else if(status==='work'){row.style.display='';input.value=generateProjectNum();lbl.textContent='✓ Підтверджено';lbl.style.color='var(--won)';}
+    else row.style.display='none';
+  } else {
+    if(cur&&document.getElementById('fStatus').dataset.prev==='contract')input.value='';
+    row.style.display='none';
+  }
+  document.getElementById('fStatus').dataset.prev=status;
+}
+function generateProjectNum(){
+  const now=new Date();
+  const yy=String(now.getFullYear()).slice(2);
+  const mm=String(now.getMonth()+1).padStart(2,'0');
+  const prefix='AVR'+yy+mm;
+  let max=0;
+  deals.forEach(d=>{if(d.projectNum&&d.projectNum.startsWith(prefix)){const n=parseInt(d.projectNum.slice(prefix.length))||0;if(n>max)max=n;}});
+  return prefix+String(max+1).padStart(3,'0');
+}
+
+// ═══════════════════════════════════════════
+//  ITEMS
+// ═══════════════════════════════════════════
+function renderItems(){
+  const cur=editCurrency;
+  document.getElementById('itemsTbody').innerHTML=editItems.map((it,i)=>`<tr data-idx="${i}">
+    <td><input value="${esc(it.name||'')}" oninput="updItemName(${i},this.value)" placeholder="Назва"></td>
+    <td><input type="number" value="${it.unitPrice||''}" oninput="updItemNum(${i},'unitPrice',this.value)" placeholder="0"></td>
+    <td><input type="number" value="${it.qty||''}" oninput="updItemNum(${i},'qty',this.value)" placeholder="1"></td>
+    <td class="item-sum" id="isum-${i}">${fmtCur(it.total||0,cur)}</td>
+    <td><button class="ibtn del" onclick="removeItem(${i})">✕</button></td>
+  </tr>`).join('');
+  refreshItemsTotal();
+}
+function refreshItemsTotal(){
+  const total=editItems.reduce((a,it)=>a+(it.total||0),0);
+  const cur=editCurrency;
+  document.getElementById('itemsTotal').textContent=fmtCur(total,cur);
+  if(total>0)document.getElementById('fPrice').value=total;
+  const ct=document.getElementById('calcTotal');
+  if(ct)ct.textContent=fmtCur(total,cur);
+  refreshCalc();
+}
+function updItemName(i,v){editItems[i].name=v;}
+function updItemNum(i,f,v){
+  editItems[i][f]=Number(v)||0;
+  editItems[i].total=(editItems[i].unitPrice||0)*(editItems[i].qty||1);
+  const cell=document.getElementById('isum-'+i);
+  if(cell)cell.textContent=fmtCur(editItems[i].total||0,editCurrency);
+  refreshItemsTotal();
+}
+function addItem(){editItems.push({name:'',unitPrice:0,qty:1,total:0});renderItems()}
+function removeItem(i){editItems.splice(i,1);renderItems()}
+
+// ═══════════════════════════════════════════
+//  CALC
+// ═══════════════════════════════════════════
+function refreshCalc(){
+  const total=editItems.reduce((a,it)=>a+(it.total||0),0)||Number(document.getElementById('fPrice').value)||0;
+  const cur=editCurrency;
+  const ct=document.getElementById('calcTotal');
+  if(ct)ct.textContent=fmtCur(total,cur);
+  const container=document.getElementById('calcParts');
+  if(!container)return;
+  const existingRows=container.querySelectorAll('.calc-row');
+  if(existingRows.length!==calcParts.length){
+    container.innerHTML=calcParts.map((p,i)=>{
+      const baseAmt=p.base&&p.base.startsWith('item_')?(editItems[parseInt(p.base.replace('item_',''))]?.total||0):total;
+      const amt=p.pct?Math.round(baseAmt*p.pct/100):p.amt||0;
+      return`<div class="calc-row" style="display:grid;grid-template-columns:1fr 130px 80px 90px auto;gap:8px;align-items:center;margin-bottom:4px">
+        <input data-idx="${i}" value="${p.name||''}" oninput="updCalcPartName(${i},this.value)" placeholder="напр. Передоплата" style="background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;width:100%;outline:none">
+        <select onchange="updCalcPartBase(${i},this.value)" style="background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-family:DM Sans,sans-serif;font-size:11px;outline:none;width:100%">
+          <option value="total" ${!p.base||p.base==='total'?'selected':''}>Загальна сума</option>
+          ${editItems.map((it,ii)=>it.name?`<option value="item_${ii}" ${p.base==='item_'+ii?'selected':''}>${it.name}</option>`:''  ).join('')}
+        </select>
+        <div style="position:relative"><input type="number" value="${p.pct||''}" oninput="updCalcPartPct(${i},this.value)" placeholder="%" min="0" max="100" style="background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;width:100%;outline:none;padding-right:22px"><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--dim)">%</span></div>
+        <div class="calc-amt" id="calc-amt-${i}" style="font-family:DM Mono,monospace;font-size:13px;font-weight:500;color:var(--gold2);text-align:right">${fmtCur(amt,cur)}</div>
+        <button class="ibtn del" onclick="removeCalcPart(${i})">✕</button>
+      </div>`;
+    }).join('');
+  } else {
+    calcParts.forEach((p,i)=>{
+      const baseAmt=p.base&&p.base.startsWith('item_')?(editItems[parseInt(p.base.replace('item_',''))]?.total||0):total;
+      const amt=p.pct?Math.round(baseAmt*p.pct/100):p.amt||0;
+      const amtEl=document.getElementById('calc-amt-'+i);
+      if(amtEl)amtEl.textContent=fmtCur(amt,cur);
+    });
+  }
+  const usedTotal=calcParts.reduce((a,p)=>{
+    const baseAmt=p.base&&p.base.startsWith('item_')?(editItems[parseInt(p.base.replace('item_',''))]?.total||0):total;
+    return a+(p.pct?Math.round(baseAmt*p.pct/100):p.amt||0);
+  },0);
+  const rem=total-usedTotal;
+  const remEl=document.getElementById('calcRemainder');
+  if(remEl){
+    if(calcParts.length>0){remEl.textContent=rem===0?'✓ Розподілено':rem>0?`Залишок: ${fmtCur(rem,cur)}`:`Перевищення: ${fmtCur(Math.abs(rem),cur)}`;remEl.style.color=rem===0?'var(--won)':rem>0?'var(--pause)':'var(--lost)';}
+    else remEl.textContent='';
+  }
+}
+function addCalcPart(){
+  const total=editItems.reduce((a,it)=>a+(it.total||0),0)||Number(document.getElementById('fPrice').value)||0;
+  const usedPct=calcParts.reduce((a,p)=>a+(Number(p.pct)||0),0);
+  calcParts.push({name:calcParts.length===0?'Передоплата':'Постоплата '+(calcParts.length),pct:Math.max(0,100-usedPct),amt:0});
+  refreshCalc();
+}
+function removeCalcPart(i){calcParts.splice(i,1);refreshCalc();}
+function updCalcPartName(i,v){calcParts[i].name=v;}
+function updCalcPartPct(i,v){calcParts[i].pct=Number(v)||0;calcParts[i].amt=0;refreshCalc();}
+function updCalcPartBase(i,v){calcParts[i].base=v;refreshCalc();}
+function calcToPayments(){
+  const total=editItems.reduce((a,it)=>a+(it.total||0),0)||Number(document.getElementById('fPrice').value)||0;
+  if(!calcParts.length){alert('Додайте частини оплати');return;}
+  const newPays=calcParts.map(p=>{
+    const baseAmt=p.base&&p.base.startsWith('item_')?(editItems[parseInt(p.base.replace('item_',''))]?.total||0):total;
+    return{label:p.name||'Платіж',amount:p.pct?Math.round(baseAmt*p.pct/100):p.amt||0,date:'',paid:false};
+  });
+  if(editPayments.length>0){if(!confirm('Замінити існуючі платежі?'))return;}
+  editPayments=newPays;renderPayments();
+  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mtab')[2].classList.add('active');
+  document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-pay').classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  PAYMENTS
+// ═══════════════════════════════════════════
+function renderPayments(){
+  const cur=editCurrency;
+  document.getElementById('payList').innerHTML=editPayments.map((p,i)=>`
+    <div class="pay-item">
+      <div class="fc"><label>Назва</label><input value="${esc(p.label||'')}" oninput="updPayLabel(${i},this.value)" placeholder="Передоплата 50%"></div>
+      <div class="fc"><label>Сума, ${cur}</label><input type="number" value="${p.amount||''}" oninput="updPayNum(${i},this.value)" placeholder="0"></div>
+      <div class="fc"><label>Дата</label><input type="date" value="${p.date||''}" oninput="updPayDate(${i},this.value)"></div>
+      <div class="fc"><label>Статус</label><button class="pay-toggle ${p.paid?'paid':'pending'}" onclick="togglePaid(${i})">${p.paid?'✓ Отримано':'Очікується'}</button></div>
+      <div class="fc"><label>&nbsp;</label><button class="ibtn del" onclick="removePay(${i})">✕</button></div>
+    </div>`).join('');
+  refreshPaySummary();
+}
+function refreshPaySummary(){
+  const cur=editCurrency;
+  const planned=editPayments.reduce((a,p)=>a+(Number(p.amount)||0),0);
+  const received=editPayments.filter(p=>p.paid).reduce((a,p)=>a+(Number(p.amount)||0),0);
+  document.getElementById('paySummary').innerHTML=`<span>Заплановано: <strong>${fmtCur(planned,cur)}</strong></span><span>Отримано: <strong style="color:var(--won)">${fmtCur(received,cur)}</strong></span><span>Залишок: <strong>${fmtCur(planned-received,cur)}</strong></span>`;
+}
+function updPayLabel(i,v){editPayments[i].label=v;}
+function updPayNum(i,v){editPayments[i].amount=Number(v)||0;refreshPaySummary();}
+function updPayDate(i,v){editPayments[i].date=v;}
+function togglePaid(i){editPayments[i].paid=!editPayments[i].paid;renderPayments()}
+function addPayment(){
+  const total=editItems.reduce((a,it)=>a+(it.total||0),0)||Number(document.getElementById('fPrice').value)||0;
+  editPayments.push({label:'',amount:Math.round(total/2)||0,date:'',paid:false});renderPayments();
+}
+function removePay(i){editPayments.splice(i,1);renderPayments()}
+
+// ═══════════════════════════════════════════
+//  SAVE DEAL
+// ═══════════════════════════════════════════
+function saveDeal(){
+  const client=document.getElementById('fClient').value.trim();
+  if(!client){document.getElementById('fClient').focus();return;}
+  const itemsTotal=editItems.reduce((a,it)=>a+(it.total||0),0);
+  const d={
+    id:editId||Date.now(),client,
+    currency:editCurrency,
+    status:document.getElementById('fStatus').value,
+    serviceType:document.getElementById('fServiceType').value,
+    desc:document.getElementById('fDesc').value.trim(),
+    price:itemsTotal||Number(document.getElementById('fPrice').value)||0,
+    prob:Number(document.getElementById('fProb').value)??PROBS[document.getElementById('fStatus').value],
+    date:document.getElementById('fDate').value,
+    contact:document.getElementById('fContact').value.trim(),
+    notes:document.getElementById('fNotes').value.trim(),
+    projectNum:document.getElementById('fProjectNum').value||'',
+    items:editItems,payments:editPayments,
+  };
+  if(editId){const i=deals.findIndex(x=>x.id===editId);deals[i]=d;}
+  else deals.unshift(d);
+  persist();render();closeModal();
+}
+function delDeal(id){
+  if(!confirm('Видалити угоду?'))return;
+  deals=deals.filter(d=>d.id!==id);persist();render();
+}
+
+// ═══════════════════════════════════════════
+//  CASH FLOW
+// ═══════════════════════════════════════════
+const CF_LSKEY='avronis_cf_v1';
+
+function loadCfLocal(){
+  try{const d=localStorage.getItem(CF_LSKEY);if(d)cfTxs=JSON.parse(d);}catch(e){cfTxs=[];}
+  const saved=localStorage.getItem('cf_bank_aed');
+  if(saved!==null&&!isNaN(parseFloat(saved))) bankBalanceAED=parseFloat(saved);
+}
+function saveCfLocal(){localStorage.setItem(CF_LSKEY,JSON.stringify(cfTxs));}
+
+function setBankManual(){
+  const cur=bankBalanceAED!==null?bankBalanceAED:'';
+  const inp=prompt('Введіть поточний залишок Bank_AED (зараз: '+cur+'):',cur);
+  if(inp===null) return;
+  const val=parseFloat(inp);
+  if(isNaN(val)||val<0){alert('Невірне значення');return;}
+  bankBalanceAED=val;
+  localStorage.setItem('cf_bank_aed',String(val));
+  renderCashflow();
+}
+
+// Week helpers
+function getWeekBounds(offsetWeeks){
+  const now=new Date();
+  const dow=now.getDay();
+  const mondayOff=dow===0?-6:1-dow;
+  const monday=new Date(now);
+  monday.setDate(now.getDate()+mondayOff+offsetWeeks*7);
+  monday.setHours(0,0,0,0);
+  const sunday=new Date(monday);
+  sunday.setDate(monday.getDate()+6);
+  sunday.setHours(23,59,59,999);
+  return{start:monday,end:sunday};
+}
+function fmtShortDate(d){return d.toLocaleDateString('uk',{day:'2-digit',month:'short'})}
+
+// All amounts in AED for cash flow timeline
+function txAmountAED(tx){
+  const raw=parseFloat(tx.amount)||0;
+  return tx.currency==='USD'?raw*FX:raw;
+}
+
+// ── месяць фільтр state ──
+let cfMonthFilter='all'; // 'all' або 'YYYY-MM'
+let cfChart=null;
+
+function getCfMonths(){
+  // Збираємо унікальні місяці з усіх транзакцій (manual + crm)
+  const months=new Set();
+  const crmPays=getCrmPayments();
+  [...cfTxs,...crmPays].forEach(t=>{if(t.date)months.add(t.date.slice(0,7));});
+  // Додаємо поточний + 2 наступні місяці завжди
+  const now=new Date();
+  for(let i=0;i<3;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    months.add(d.toISOString().slice(0,7));
+  }
+  return Array.from(months).sort();
+}
+
+function getCrmPayments(){
+  const arr=[];
+  deals.forEach(d=>{
+    if(d.status==='lost') return;
+    (d.payments||[]).forEach(p=>{
+      if(!p.amount||p.paid) return;
+      arr.push({id:'crm_'+d.id+'_'+p.label,date:p.date||'',type:'income',
+        desc:d.client+' — '+p.label,amount:p.amount,currency:d.currency||'USD',source:'crm',note:d.projectNum||''});
+    });
+  });
+  return arr;
+}
+
+function renderCashflow(){
+  const el=document.getElementById('cashflowContent');
+  const crmPayments=getCrmPayments();
+  const allTxs=[...cfTxs,...crmPayments];
+
+  const WEEKS_PAST=2;
+  const WEEKS_FUTURE=8;
+  const WEEKS=WEEKS_PAST+WEEKS_FUTURE;
+  // Починаємо з реального залишку банку
+  // Для минулих тижнів — рахуємо назад (баланс до витрат)
+  // Спочатку рахуємо всі минулі транзакції щоб знати стартовий баланс для WEEKS_PAST тижнів тому
+  const bankAEDStart=bankBalanceAED!==null?bankBalanceAED:0;
+  // Знаходимо суму всіх транзакцій що вже відбулись (минулі тижні) — щоб відмотати назад
+  let pastNet=0;
+  for(let pw=-WEEKS_PAST;pw<0;pw++){
+    const{start:ps,end:pe}=getWeekBounds(pw);
+    allTxs.forEach(t=>{
+      if(!t.date) return;
+      const d=new Date(t.date);
+      if(d<ps||d>pe) return;
+      const aed=txAmountAED(t);
+      if(t.type==='income') pastNet+=aed;
+      else pastNet-=aed;
+    });
+  }
+  // Стартовий баланс = поточний банк МІНУС те що надійшло/витратилось за минулі тижні
+  let runningAED=bankAEDStart-pastNet;
+  let totalIncAED=0,totalOutAED=0;
+  const weekData=[];
+
+  for(let w=-WEEKS_PAST;w<WEEKS_FUTURE;w++){
+    const{start,end}=getWeekBounds(w);
+    // Apply month filter — show week only if it overlaps the selected month
+    let wTxs=allTxs.filter(t=>{
+      if(!t.date) return false;
+      const d=new Date(t.date);
+      if(cfMonthFilter!=='all'){
+        const ym=t.date.slice(0,7);
+        if(ym!==cfMonthFilter) return false;
+      }
+      return d>=start&&d<=end;
+    });
+    let wIn=0,wOut=0,wDebt=0;
+    // For balance always use all txs in week (not filtered) so running balance is correct
+    const wTxsAll=allTxs.filter(t=>{if(!t.date)return false;const d=new Date(t.date);return d>=start&&d<=end;});
+    wTxsAll.forEach(t=>{
+      const aed=txAmountAED(t);
+      if(t.type==='income') wIn+=aed;
+      else if(t.type==='debt') wDebt+=aed;
+      else wOut+=aed;
+    });
+    if(w>=0&&w<4){totalIncAED+=wIn;totalOutAED+=wOut+wDebt;}
+    const balanceStart=runningAED;
+    runningAED+=wIn-wOut-wDebt;
+    const isPast=w<0;
+    weekData.push({w,start,end,txs:wTxs,wTxsAll,wIn,wOut,wDebt,balanceStart,balance:runningAED,isPast});
+  }
+
+  const bankAED=bankBalanceAED!==null?bankBalanceAED:0;
+  const net4=bankAED+totalIncAED-totalOutAED;
+  const months=getCfMonths();
+
+  // Month filter buttons
+  const monthBtns=months.map(m=>{
+    const label=new Date(m+'-01').toLocaleDateString('uk',{month:'short',year:'2-digit'});
+    return`<button class="cf-month-btn${cfMonthFilter===m?' active':''}" onclick="setCfMonth('${m}')">${label}</button>`;
+  }).join('');
+
+  let html=`<div class="cf-wrap" id="cfPrintArea">
+    <!-- CONTROLS -->
+    <div class="cf-controls">
+      <div class="cf-month-strip">
+        <button class="cf-month-btn${cfMonthFilter==='all'?' active':''}" onclick="setCfMonth('all')">Всі</button>
+        ${monthBtns}
+      </div>
+      <button class="cf-pdf-btn" onclick="exportCfPDF()">⬇ PDF</button>
+      <button class="cf-add-btn" onclick="openCfModal()">+ Транзакція</button>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="cf-bank-bar">
+      <div class="cf-card bank" style="cursor:pointer" onclick="setBankManual()" title="Натисніть щоб оновити залишок">
+        <div class="cf-card-lbl">Bank_AED · залишок зараз <span style="font-size:9px;opacity:.5">✎</span></div>
+        <div class="cf-card-val cf-green">${bankBalanceAED!==null?fmtAED(bankAED):'— натисніть'}</div>
+        <div class="cf-card-sub">${bankBalanceAED!==null?'≈ '+fmtUSD(bankAED/FX):'введіть залишок вручну'}</div>
+      </div>
+      <div class="cf-card inc">
+        <div class="cf-card-lbl">Надходження (4 тижні)</div>
+        <div class="cf-card-val cf-blue">${fmtAED(totalIncAED)}</div>
+        <div class="cf-card-sub">≈ ${fmtUSD(totalIncAED/FX)}</div>
+      </div>
+      <div class="cf-card out">
+        <div class="cf-card-lbl">Витрати (4 тижні)</div>
+        <div class="cf-card-val cf-red">${fmtAED(totalOutAED)}</div>
+        <div class="cf-card-sub">≈ ${fmtUSD(totalOutAED/FX)}</div>
+      </div>
+      <div class="cf-card ${net4>=0?'net-pos':'net-neg'}">
+        <div class="cf-card-lbl">Прогноз кінець тижня 4</div>
+        <div class="cf-card-val ${net4>=0?'cf-green':'cf-red'}">${fmtAED(net4)}</div>
+        <div class="cf-card-sub">${net4>=0?'коштів вистачає':'⚠ нестача коштів'}</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="cf-chart-wrap">
+      <div class="cf-chart-title">
+        <span>// баланс по тижнях (AED)</span>
+        <div class="cf-chart-legend">
+          <span class="cf-legend-dot leg-balance">Залишок</span>
+          <span class="cf-legend-dot leg-in">Надходження</span>
+          <span class="cf-legend-dot leg-out">Витрати</span>
+        </div>
+      </div>
+      <canvas id="cfChart"></canvas>
+    </div>
+
+    <!-- WEEKS -->
+    <div class="cf-section-hd">
+      <span class="cf-section-lbl">// тижневий план</span>
+    </div>
+    <div class="cf-weeks">`;
+
+  weekData.forEach(({w,start,end,txs,wIn,wOut,wDebt,balanceStart,balance,isPast})=>{
+    // If month filter active — skip weeks with no txs in that month AND that don't overlap
+    if(cfMonthFilter!=='all'){
+      const wYM=start.toISOString().slice(0,7);
+      const wYM2=end.toISOString().slice(0,7);
+      if(wYM!==cfMonthFilter&&wYM2!==cfMonthFilter&&txs.length===0) return;
+    }
+    // For past weeks — skip if no transactions at all
+    if(isPast&&txs.length===0) return;
+
+    const isNow=w===0;
+    const lvl=balance<0?'danger':balance<10000?'warning':'ok';
+    const pillCls=lvl==='danger'?'pill-danger':lvl==='warning'?'pill-warn':'pill-ok';
+    const startIso=start.toISOString().slice(0,10);
+
+    let weekLabel='';
+    if(isNow) weekLabel='Поточний тиждень';
+    else if(isPast) weekLabel=`${Math.abs(w)} тиж. тому`;
+    else weekLabel=`Тиждень +${w}`;
+
+    const pastStyle=isPast?'opacity:0.7;':'';
+
+    html+=`<div class="cf-week ${lvl}${isNow?' open':''}" id="cfw${w}" style="${pastStyle}">
+      <div class="cf-week-hd" onclick="toggleCfWeek(${w})">
+        <div class="cf-wlabel">
+          <strong>${weekLabel}${isPast?` <span style="font-size:9px;background:rgba(107,115,143,0.2);color:var(--dim);padding:1px 6px;border-radius:4px;font-family:DM Mono,monospace;vertical-align:middle">МИНУЛИЙ</span>`:''}</strong>
+          <span>${fmtShortDate(start)} — ${fmtShortDate(end)}</span>
+          <span style="font-size:10px;color:var(--dim);font-family:DM Mono,monospace;margin-top:2px;display:block">Початок тижня: ${fmtAED(balanceStart)}</span>
+        </div>
+        <div class="cf-wcol"><div class="cf-wcol-lbl">Надходження</div><div class="cf-wcol-val col-in">${wIn>0?'+'+fmtAED(wIn):'—'}</div></div>
+        <div class="cf-wcol"><div class="cf-wcol-lbl">Витрати</div><div class="cf-wcol-val col-out">${wOut>0?'−'+fmtAED(wOut):'—'}</div></div>
+        <div class="cf-wcol"><div class="cf-wcol-lbl">Борги</div><div class="cf-wcol-val col-debt">${wDebt>0?'−'+fmtAED(wDebt):'—'}</div></div>
+        <div class="cf-balance-pill ${pillCls}">${fmtAED(balance)}</div>
+        <div class="cf-chevron">▼</div>
+      </div>
+      <div class="cf-week-body">
+        <div class="cf-tx-list">
+          ${txs.length===0?'<div class="cf-empty-week">Немає транзакцій</div>':txs.map(t=>renderCfTx(t)).join('')}
+        </div>
+        ${!isPast?`<div class="cf-quick-add">
+          <button class="cf-quick-btn" onclick="openCfModal('${startIso}','expense-opex')">+ OPEX</button>
+          <button class="cf-quick-btn" onclick="openCfModal('${startIso}','expense-capex')">+ CAPEX</button>
+          <button class="cf-quick-btn" onclick="openCfModal('${startIso}','debt')">+ Борг</button>
+          <button class="cf-quick-btn" onclick="openCfModal('${startIso}','income')">+ Надходження</button>
+        </div>`:''}
+      </div>
+    </div>`;
+
+  html+=`</div></div>`;
+  el.innerHTML=html;
+
+  // Draw chart after DOM update
+  requestAnimationFrame(()=>drawCfChart(weekData,bankAED));
+}
+
+function setCfMonth(m){
+  cfMonthFilter=m;
+  renderCashflow();
+}
+
+function drawCfChart(weekData,startBalance){
+  const canvas=document.getElementById('cfChart');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||800;
+  const H=180;
+  canvas.width=W*2;canvas.height=H*2;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(2,2);
+
+  const pad={top:20,right:16,bottom:36,left:64};
+  const chartW=W-pad.left-pad.right;
+  const chartH=H-pad.top-pad.bottom;
+
+  // Data
+  const labels=weekData.map(d=>d.w===0?'Зараз':fmtShortDate(d.start));
+  const balances=weekData.map(d=>d.balance);
+  const incomes=weekData.map(d=>d.wIn);
+  const outflows=weekData.map(d=>d.wOut+d.wDebt);
+
+  const allVals=[...balances,...incomes,...outflows];
+  const minV=Math.min(0,...allVals);
+  const maxV=Math.max(...allVals,1);
+  const range=maxV-minV||1;
+
+  function yPos(v){return pad.top+chartH-(((v-minV)/range)*chartH);}
+  function xPos(i){return pad.left+(i/(weekData.length-1||1))*chartW;}
+
+  // Background
+  ctx.fillStyle='#0f1117';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.04)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.top+(i/4)*chartH;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+chartW,y);ctx.stroke();
+    const val=maxV-i*(range/4);
+    ctx.fillStyle='#6b738f';ctx.font='9px DM Mono,monospace';
+    ctx.textAlign='right';
+    ctx.fillText('AED '+(Math.round(val/1000))+'k',pad.left-4,y+3);
+  }
+
+  // Zero line
+  if(minV<0){
+    const zy=yPos(0);
+    ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(pad.left,zy);ctx.lineTo(pad.left+chartW,zy);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Bar width
+  const barW=Math.max(4,chartW/weekData.length*0.3);
+
+  // Income bars
+  weekData.forEach((d,i)=>{
+    if(d.wIn<=0) return;
+    const x=xPos(i)-barW;
+    const yTop=yPos(d.wIn);const yBot=yPos(0);
+    ctx.fillStyle='rgba(56,189,248,0.55)';
+    ctx.fillRect(x,yTop,barW,yBot-yTop);
+  });
+
+  // Outflow bars
+  weekData.forEach((d,i)=>{
+    const out=d.wOut+d.wDebt;
+    if(out<=0) return;
+    const x=xPos(i);
+    const yTop=yPos(out);const yBot=yPos(0);
+    ctx.fillStyle='rgba(239,68,68,0.45)';
+    ctx.fillRect(x,yTop,barW,yBot-yTop);
+  });
+
+  // Balance line fill
+  ctx.beginPath();
+  ctx.moveTo(xPos(0),yPos(balances[0]));
+  balances.forEach((b,i)=>{if(i>0)ctx.lineTo(xPos(i),yPos(b));});
+  ctx.lineTo(xPos(balances.length-1),yPos(0));
+  ctx.lineTo(xPos(0),yPos(0));
+  ctx.closePath();
+  ctx.fillStyle='rgba(29,158,117,0.08)';ctx.fill();
+
+  // Balance line
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.beginPath();
+  balances.forEach((b,i)=>{i===0?ctx.moveTo(xPos(i),yPos(b)):ctx.lineTo(xPos(i),yPos(b));});
+  ctx.stroke();
+
+  // Dots
+  balances.forEach((b,i)=>{
+    ctx.fillStyle='#1D9E75';
+    ctx.beginPath();ctx.arc(xPos(i),yPos(b),3,0,Math.PI*2);ctx.fill();
+  });
+
+  // X labels
+  ctx.fillStyle='#6b738f';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
+  labels.forEach((l,i)=>{ctx.fillText(l,xPos(i),H-pad.bottom+14);});
+}
+
+function exportCfPDF(){
+  // Use browser print with print styles
+  const style=document.createElement('style');
+  style.id='cf-print-style';
+  style.textContent=\`
+    @media print {
+      body > *:not(main) { display:none!important; }
+      main > *:not(#cashflowView) { display:none!important; }
+      #cashflowView { display:block!important; }
+      header { display:none!important; }
+      .cf-quick-add { display:none!important; }
+      .cf-pdf-btn { display:none!important; }
+      .cf-add-btn { display:none!important; }
+      body { background:#fff!important; color:#000!important; }
+      .cf-wrap { color:#000; }
+    }
+  \`;
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(()=>{const s=document.getElementById('cf-print-style');if(s)s.remove();},1000);
+}
+
+// ── CF MODAL ──
+function setCfCurrency(cur){
+  cfCurrency=cur;
+  document.getElementById('cfCurUSD').classList.toggle('active',cur==='USD');
+  document.getElementById('cfCurAED').classList.toggle('active',cur==='AED');
+}
+
+function openCfModal(date,type){
+  document.getElementById('cfDate').value=date||new Date().toISOString().slice(0,10);
+  document.getElementById('cfType').value=type||'expense-opex';
+  document.getElementById('cfDesc').value='';
+  document.getElementById('cfAmount').value='';
+  document.getElementById('cfNote').value='';
+  setCfCurrency('AED');
+  document.getElementById('cfOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('cfDesc').focus(),100);
+}
+function closeCfModal(){document.getElementById('cfOverlay').classList.remove('open');}
+document.getElementById('cfOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('cfOverlay'))closeCfModal();});
+
+function saveCfTx(){
+  const date=document.getElementById('cfDate').value;
+  const type=document.getElementById('cfType').value;
+  const desc=document.getElementById('cfDesc').value.trim();
+  const amount=parseFloat(document.getElementById('cfAmount').value);
+  const note=document.getElementById('cfNote').value.trim();
+  if(!date||!desc||!amount||amount<=0){alert('Заповніть дату, опис та суму');return;}
+  cfTxs.push({id:'tx_'+Date.now(),date,type,desc,amount,currency:cfCurrency,note,source:'manual',created:new Date().toISOString()});
+  saveCfLocal();
+  closeCfModal();
+  renderCashflow();
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function goToDeal(id){filter='all';document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelector('.tab').classList.add('active');render();setTimeout(()=>openDeal(id),100);}
+
+init();
+</script>
+</body>
+</html>
