@@ -248,9 +248,9 @@ canvas#cfChart{width:100%!important;display:block}
 
 /* CF DONUT */
 .cf-charts-row{display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-bottom:16px}
-.cf-donut-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
+.cf-donut-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
 .cf-donut-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px}
-.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-wrap{display:flex;align-items:center;gap:20px}
 canvas.donut{width:130px!important;height:130px!important;flex-shrink:0}
 .donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
 .donut-leg-row{display:flex;align-items:center;justify-content:space-between;font-size:11px}
@@ -328,6 +328,34 @@ canvas.donut{width:130px!important;height:130px!important;flex-shrink:0}
 .arch-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
 
 
+
+/* MONTHLY DASHBOARD */
+.cf-monthly-dash{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.cf-monthly-dash-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.cf-monthly-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.cf-monthly-strip::-webkit-scrollbar{display:none}
+.cf-month-card{flex-shrink:0;width:120px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .2s}
+.cf-month-card:hover{border-color:var(--teal);background:var(--teal-light)}
+.cf-month-card.active{border-color:var(--teal);background:var(--teal);color:#fff}
+.cf-month-card.has-gap{border-color:#FECACA}
+.cf-month-card.has-gap.active{background:var(--red);border-color:var(--red)}
+.cf-month-card-name{font-size:11px;font-weight:600;margin-bottom:6px}
+.cf-month-card.active .cf-month-card-name{color:#fff}
+.cf-month-card-bal{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green)}
+.cf-month-card.active .cf-month-card-bal{color:#fff}
+.cf-month-card-bal.neg{color:var(--red)}
+.cf-month-card.active .cf-month-card-bal.neg{color:#FCA5A5}
+.cf-month-card-sub{font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+.cf-month-card.active .cf-month-card-sub{color:rgba(255,255,255,0.7)}
+.cf-month-card-gap{font-size:9px;color:var(--red);margin-top:2px;font-weight:600}
+.cf-month-card.active .cf-month-card-gap{color:#FCA5A5}
+
+/* PAYMENT DISTRIBUTION INDICATOR */
+.deal-pay-indicator{display:flex;align-items:center;gap:6px;margin-top:4px}
+.deal-pay-bar-wrap{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;max-width:80px}
+.deal-pay-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.deal-pay-pct{font-size:10px;font-family:var(--mono);font-weight:600}
+.deal-pay-missing{font-size:10px;color:var(--red);font-family:var(--mono)}
 /* AI ADVISOR */
 .cf-advisor-card{background:linear-gradient(135deg,#EFF6FF,#F5F3FF);border:1px solid #BFDBFE;border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
 .cf-advisor-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
@@ -733,12 +761,30 @@ function render(){
     var rawTotal=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;
     var rawPaid=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
     var pn=d.projectNum?('<span class="pnum">'+d.projectNum+'</span>'):'';
+    // Payment distribution indicator for active deals
+    var payIndicator='';
+    var activeStatuses=['contract','invoice','work'];
+    if(activeStatuses.indexOf(d.status)>-1){
+      var dealTotal_=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;
+      var payTotal_=(d.payments||[]).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+      if(dealTotal_>0){
+        var pct_=Math.min(100,Math.round(payTotal_/dealTotal_*100));
+        var missing_=dealTotal_-payTotal_;
+        var barColor_=pct_>=100?'var(--green)':pct_>50?'var(--amber)':'var(--red)';
+        var missingHtml_=missing_>0?'<span class="deal-pay-missing">-'+fmtCur(missing_,d.currency||"USD")+'</span>':'<span style="font-size:10px;color:var(--green)">✓</span>';
+        payIndicator='<div class="deal-pay-indicator">'
+          +'<div class="deal-pay-bar-wrap"><div class="deal-pay-bar-fill" style="width:'+pct_+'%;background:'+barColor_+'"></div></div>'
+          +'<span class="deal-pay-pct" style="color:'+barColor_+'">'+pct_+'%</span>'
+          +missingHtml_
+          +'</div>';
+      }
+    }
     var notes=d.notes?('<div class="td-dim">'+esc(d.notes.substring(0,50))+(d.notes.length>50?'...':'')+'</div>'):'';
     var svc=d.serviceType?('<span style="color:var(--accent2);font-size:11px;font-weight:600">'+esc(d.serviceType)+'</span>'+(d.desc?' · '+esc(d.desc):'')):(esc(d.desc)||'—');
     var aedRow=cur==='AED'?('<span class="td-aed">~'+fmtUSD(totalUSD)+'</span>'):('<span class="td-aed">'+fmtAED(totalUSD*FX)+'</span>');
     var paidRow=rawPaid>0?(fmtCur(rawPaid,cur)+(cur==='AED'?'<span class="td-aed">~'+fmtUSD(paidUSD)+'</span>':'')):'—';
     return '<tr>'
-      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer"><div class="td-name">'+esc(d.client)+pn+'</div>'+notes+'</td>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer"><div class="td-name">'+esc(d.client)+pn+'</div>'+notes+payIndicator+'</td>'
       +'<td onclick="openDeal('+d.id+')" style="cursor:pointer;color:var(--text2);font-size:12px">'+svc+'</td>'
       +'<td class="td-mono" onclick="openDeal('+d.id+')" style="cursor:pointer">'+fmtCur(rawTotal,cur)+aedRow+'</td>'
       +'<td class="td-mono" onclick="openDeal('+d.id+')" style="cursor:pointer;color:'+(rawPaid>0?'var(--green)':'var(--text3)')+'">'+paidRow+'</td>'
@@ -1076,6 +1122,7 @@ function renderCF(){
     +'<div class="cf-kpi out"><div class="cf-kpi-lbl">Витрати (4 тижні)</div><div class="cf-kpi-val v-red">'+fmtAED(totalOut4)+'</div><div class="cf-kpi-sub">≈ '+fmtUSD(totalOut4/FX)+'</div></div>'
     +'<div class="cf-kpi '+(net4>=0?'net-ok':'net-bad')+'"><div class="cf-kpi-lbl">Прогноз кінець тижня 4</div><div class="cf-kpi-val '+(net4>=0?'v-green':'v-red')+'">'+fmtAED(net4)+'</div><div class="cf-kpi-sub">'+(net4>=0?'✓ коштів вистачає':'⚠ нестача коштів')+'</div></div>'
     +'</div>'
+    +generateMonthlyDash(allTxs,bank0)
     +generateAdvisorHTML(weekData,bank0,totalIn4,totalOut4,net4)
     +'<div class="cf-chart-card"><div class="cf-chart-hd"><span class="cf-chart-title">Баланс по тижнях (AED)</span><div class="cf-legend"><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--teal)"></span>Залишок</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--accent)"></span>Надходження</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--red)"></span>Витрати</span></div></div><canvas id="cfChart" style="height:160px"></canvas></div>'
     +'<div class="cf-charts-row">'
@@ -1096,11 +1143,11 @@ function renderCF(){
     var startIso=wd.start.toISOString().slice(0,10);
     html+='<div class="cf-week '+lvl+(wd.isPast?' w-past':'')+(isNow?' open':'')+"\" id=\"cfw"+wd.w+'">'
       +'<div class="cf-wh" onclick="toggleCfW('+wd.w+')">'
-      +'<div class="cf-wlbl"><strong>'+wlbl+pastMark+'</strong><span>'+fmtShort(wd.start)+' — '+fmtShort(wd.end)+'</span><small>Початок тижня: '+fmtAED(wd.balStart)+'</small></div>'
+      +'<div class="cf-wlbl"><strong>'+wlbl+pastMark+'</strong><span>'+fmtShort(wd.start)+' — '+fmtShort(wd.end)+'</span><small>Початок тижня: <strong>'+fmtAED(wd.balStart)+'</strong> → Кінець тижня: <strong>'+fmtAED(wd.balance)+'</strong></small></div>'
       +'<div class="cf-wcol"><div class="cf-wcol-l">Надходження</div><div class="cf-wcol-v col-in">'+(wd.wIn>0?'+'+fmtAED(wd.wIn):'—')+'</div></div>'
       +'<div class="cf-wcol"><div class="cf-wcol-l">Витрати</div><div class="cf-wcol-v col-out">'+(wd.wOut>0?'−'+fmtAED(wd.wOut):'—')+'</div></div>'
       +'<div class="cf-wcol"><div class="cf-wcol-l">Борги</div><div class="cf-wcol-v col-debt">'+(wd.wDebt>0?'−'+fmtAED(wd.wDebt):'—')+'</div></div>'
-      +'<div class="cf-pill '+pill+'">'+fmtAED(wd.balance)+'</div>'
+      +'<div class="cf-pill '+pill+'" title="Залишок на кінець тижня">'+fmtAED(wd.balance)+'</div>'
       +'<div class="cf-chev">▼</div></div>'
       +'<div class="cf-wb"><div class="cf-txlist">'+(wd.txs.length===0?'<div class="cf-empty">Немає транзакцій</div>':wd.txs.map(renderCfTx).join(''))+'</div>'
       +(!wd.isPast?('<div class="cf-qadd"><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'expense-opex\')">+ OPEX</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'expense-capex\')">+ CAPEX</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'debt\')">+ Борг</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'income\')">+ Надходження</button></div>'):'')
@@ -1114,6 +1161,60 @@ function renderCF(){
     var totalOutAll=Object.values(catOut).reduce(function(a,v){return a+v;},0);
     drawDonut('donutInOut',[catIn,totalOutAll],['#0D9488','#DC2626'],true);
   });
+}
+
+function getMonthlyForecast(allTxs, bankStart){
+  // Calculate running balance month by month from now to Dec 2026
+  var months = ['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+  var result = [];
+  var running = bankStart;
+
+  months.forEach(function(ym){
+    var yr = parseInt(ym.split('-')[0]);
+    var mo = parseInt(ym.split('-')[1]);
+    var startD = new Date(yr, mo-1, 1, 0,0,0,0);
+    var endD = new Date(yr, mo, 0, 23,59,59,999);
+
+    var mIn=0, mOut=0;
+    allTxs.forEach(function(t){
+      if(!t.date) return;
+      var td = new Date(t.date);
+      if(td < startD || td > endD) return;
+      var aed = txAED(t);
+      if(t.type==='income') mIn+=aed;
+      else mOut+=aed;
+    });
+
+    var startBal = running;
+    running += mIn - mOut;
+    var monthNames = {
+      '2026-05':'Трав 26','2026-06':'Черв 26','2026-07':'Лип 26',
+      '2026-08':'Серп 26','2026-09':'Вер 26','2026-10':'Жовт 26',
+      '2026-11':'Лист 26','2026-12':'Груд 26'
+    };
+    result.push({ym:ym, name:monthNames[ym]||ym, startBal:startBal, endBal:running, mIn:mIn, mOut:mOut, hasGap:running<0});
+  });
+  return result;
+}
+
+function generateMonthlyDash(allTxs, bankNow){
+  var forecast = getMonthlyForecast(allTxs, bankNow);
+  var html = '<div class="cf-monthly-dash"><div class="cf-monthly-dash-title">📅 Прогноз залишку по місяцях (на кінець місяця)</div><div class="cf-monthly-strip">';
+  forecast.forEach(function(m){
+    var balClass = m.endBal < 0 ? ' neg' : '';
+    var activeClass = cfMonth === m.ym ? ' active' : '';
+    var gapClass = m.hasGap ? ' has-gap' : '';
+    var gapHtml = m.hasGap ? '<div class="cf-month-card-gap">⚠ Розрив</div>' : '';
+    var inOut = (m.mIn>0?('+'+fmtAED(m.mIn)):'—') + (m.mOut>0?(' / −'+fmtAED(m.mOut)):'');
+    var onclk = 'setCfMonth(' + JSON.stringify(m.ym) + ')';
+    html += '<div class="cf-month-card'+activeClass+gapClass+'" onclick="'+onclk+'">'
+      +'<div class="cf-month-card-name">'+m.name+'</div>'
+      +'<div class="cf-month-card-bal'+balClass+'">'+fmtAED(m.endBal)+'</div>'
+      +'<div class="cf-month-card-sub">'+inOut+'</div>'
+      +gapHtml+'</div>';
+  });
+  html += '</div></div>';
+  return html;
 }
 
 function generateAdvisorHTML(weekData,bankNow,totalIn4,totalOut4,net4){
