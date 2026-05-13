@@ -638,6 +638,19 @@ function loadFromSheets(){
     else if(parsed.deals&&Array.isArray(parsed.deals))deals=parsed.deals;
     else deals=[];
     deals=deals.filter(function(d){return d&&typeof d==='object'&&d.client;});
+    // ЗАХИСТ: якщо Sheets повернув порожній масив але локально є дані - не перезаписувати
+    if(deals.length===0){
+      var localBackup=localStorage.getItem(LSKEY);
+      try{
+        var localDeals=localBackup?JSON.parse(localBackup).filter(function(d){return d&&d.client;}):[];
+        if(localDeals.length>0){
+          deals=localDeals;
+          setBadge('Локальний кеш (Sheets порожній)','saving');
+          // Відновити в Sheets
+          fetch(scriptUrl+'?action=save&data='+encodeURIComponent(JSON.stringify(deals))).then(function(){setBadge('Відновлено в Google','ok');});
+        }
+      }catch(e){}
+    }
     if(parsed.bank_aed!==undefined){bankAED=parseFloat(parsed.bank_aed)||null;if(bankAED)localStorage.setItem('cf_bank_aed',String(bankAED));}
     setBadge('Збережено в Google','ok');localStorage.setItem(LSKEY,JSON.stringify(deals));render();
   }).catch(function(){
@@ -654,6 +667,16 @@ function persist(){
 }
 function connectScript(){var url=document.getElementById('scriptUrl').value.trim();if(url.indexOf('script.google.com')<0){alert('Невірний URL');return;}scriptUrl=url;localStorage.setItem(URLKEY,url);document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
 function useLocal(){document.getElementById('setupBanner').classList.add('hidden');var local=localStorage.getItem(LSKEY);try{deals=local?JSON.parse(local).filter(function(d){return d&&d.client;}):[]; }catch(e){deals=[];}setBadge('Локально','err');render();hide();}
+
+// Якщо URL скрипту є — одразу підключаємо без банера
+function checkAndConnect(){
+  var saved=localStorage.getItem(URLKEY);
+  if(saved&&saved.indexOf('script.google.com')>-1){
+    scriptUrl=saved;
+    document.getElementById('setupBanner').classList.add('hidden');
+    document.getElementById('scriptUrl').value=saved;
+  }
+}
 
 function updateKPIs(){
   var confirmed=deals.filter(function(d){return ['won','work','contract','invoice'].indexOf(d.status)>-1;});
@@ -1037,13 +1060,24 @@ function renderCF(){
 
 function renderCfTx(t){
   var typeMap={'expense-capex':['b-capex','CAPEX','amt-out'],'expense-opex':['b-opex','OPEX','amt-out'],'debt':['b-debt','БОРГ','amt-debt'],'income':['b-income','ДОХІД','amt-in']};
-  var tm=typeMap[t.type]||['b-opex','OPEX','amt-out'];var sign=t.type==='income'?'+':'−';var aed=txAED(t);var isCrm=t.source==='crm';
-  var catLabel=t.category?('<span style="font-size:10px;color:var(--text3)">'+esc(t.category)+'</span>'):('<span class="cf-tx-src">'+(t.note?esc(t.note):'')+'</span>');
-  var editBtn=!isCrm?('<button class="cf-del" onclick="editCfTx(\''+t.id+'\')" title="Редагувати">✎</button>'):'<span></span>';
-  var delBtn=!isCrm?('<button class="cf-del" onclick="delCfTx(\''+t.id+'\')">✕</button>'):'<span></span>';
-  return '<div class="cf-tx"><span class="cf-tx-date">'+(t.date||'—')+'</span><span class="cf-tx-desc">'+esc(t.desc)+(isCrm?'<span style="font-size:9px;background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:var(--mono)">CRM</span>':'')+'</span><span class="cf-tx-amt '+tm[2]+'">'+sign+fmtAED(aed)+(t.currency==='USD'?'<br><span style="font-size:9px;color:var(--text3)">$'+Math.round(parseFloat(t.amount)||0).toLocaleString()+'</span>':'')+'</span><span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'+catLabel+editBtn+delBtn+'</div>';
+  var tm=typeMap[t.type]||['b-opex','OPEX','amt-out'];
+  var sign=t.type==='income'?'+':'−';
+  var aed=txAED(t);
+  var isCrm=t.source==='crm';
+  var catTxt=t.category||t.desc||'—';
+  var crmBadge=isCrm?'<span style="font-size:9px;background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:3px;margin-left:4px">CRM</span>':'';
+  var editBtn=!isCrm?('<button class="cf-del" onclick="editCfTx(\'' +t.id+ '\')" title="Редагувати">✎</button>'):'<span></span>';
+  var delBtn=!isCrm?('<button class="cf-del" onclick="delCfTx(\'' +t.id+ '\')">✕</button>'):'<span></span>';
+  var amtExtra=t.currency==='USD'?'<br><span style="font-size:9px;color:var(--text3)">$'+Math.round(parseFloat(t.amount)||0).toLocaleString()+'</span>':'';
+  return '<div class="cf-tx">'
+    +'<span class="cf-tx-date">'+(t.date||'—')+'</span>'
+    +'<span class="cf-tx-desc">'+esc(catTxt)+crmBadge+'</span>'
+    +'<span class="cf-tx-amt '+tm[2]+'">'+sign+fmtAED(aed)+amtExtra+'</span>'
+    +'<span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'
+    +'<span class="cf-tx-src">'+(t.note?esc(t.note):'')+'</span>'
+    +editBtn+delBtn
+    +'</div>';
 }
-
 function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el)el.classList.toggle('open');}
 function delCfTx(id){if(!confirm('Видалити транзакцію?'))return;cfTxs=cfTxs.filter(function(t){return t.id!==id;});saveCfLocal();renderCF();}
 function setCfMonth(m){cfMonth=m;renderCF();}
