@@ -450,6 +450,31 @@ canvas.donut{width:160px!important;height:160px!important;flex-shrink:0}
 .cf-breakdown-amount{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);white-space:nowrap}
 .cf-breakdown-bar{height:3px;background:var(--surface3);border-radius:2px;margin-top:2px;overflow:hidden}
 .cf-breakdown-bar-fill{height:100%;border-radius:2px}
+
+/* PROJECT REGISTRY */
+.reg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.reg-title{font-size:16px;font-weight:700;color:var(--text)}
+.reg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow-sm);overflow:hidden}
+.reg-card-hd{display:grid;grid-template-columns:140px 1fr 120px 100px 100px 36px;align-items:center;padding:12px 16px;cursor:pointer;gap:8px}
+.reg-card-hd:hover{background:var(--surface2)}
+.reg-pnum{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)}
+.reg-client{font-weight:600;font-size:13px}
+.reg-desc{font-size:12px;color:var(--text2)}
+.reg-status{display:flex;justify-content:center}
+.reg-count{font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center}
+.reg-body{display:none;border-top:1px solid var(--border);padding:16px;background:var(--surface2)}
+.reg-card.open .reg-body{display:block}
+.reg-card.open .reg-card-hd{background:var(--surface2)}
+.reg-aggr-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+.reg-aggr-table th{padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);background:var(--surface)}
+.reg-aggr-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.reg-aggr-table tr:last-child td{border-bottom:none}
+.reg-aggr-table input,.reg-aggr-table select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--font);font-size:12px;color:var(--text);outline:none;width:100%}
+.reg-aggr-table input:focus,.reg-aggr-table select:focus{border-color:var(--accent)}
+.reg-add-aggr{padding:5px 12px;border-radius:var(--radius-sm);background:transparent;border:1px dashed var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.reg-add-aggr:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.reg-save-btn{padding:6px 16px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;margin-left:8px}
+.reg-empty{text-align:center;padding:48px;color:var(--text3)}
 /* AI ADVISOR */
 .cf-advisor-card{background:linear-gradient(135deg,#EFF6FF,#F5F3FF);border:1px solid #BFDBFE;border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
 .cf-advisor-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
@@ -516,6 +541,7 @@ canvas.donut{width:160px!important;height:160px!important;flex-shrink:0}
       <button class="tab" onclick="setFilter('lost',this)">Програно</button>
       <button class="tab" onclick="setFilter('archive',this)">Архів</button>
       <button class="tab pay-tab" onclick="setFilter('payments',this)">💳 Платежі</button>
+      <button class="tab" onclick="setFilter('registry',this)">📋 Реєстр проектів</button>
       <button class="tab cf-tab" onclick="setFilter('cashflow',this)">📊 Cash Flow</button>
     </div>
   </div>
@@ -544,6 +570,7 @@ canvas.donut{width:160px!important;height:160px!important;flex-shrink:0}
   </div>
   <div id="archiveView" style="display:none"><div id="archiveList"></div></div>
   <div id="paymentsView" style="display:none"><div id="paymentsContent"></div></div>
+  <div id="registryView" style="display:none"><div id="registryContent"></div></div>
   <div id="cashflowView" style="display:none"><div id="cfContent"></div></div>
 </main>
 
@@ -853,13 +880,15 @@ function updateKPIs(){
 
 function render(){
   updateKPIs();
-  var isArch=filter==='archive';var isCF=filter==='cashflow';var isPay=filter==='payments';
-  document.getElementById('mainView').style.display=(isArch||isCF||isPay)?'none':'block';
+  var isArch=filter==='archive';var isCF=filter==='cashflow';var isPay=filter==='payments';var isReg=filter==='registry';
+  document.getElementById('mainView').style.display=(isArch||isCF||isPay||isReg)?'none':'block';
   document.getElementById('archiveView').style.display=isArch?'block':'none';
   document.getElementById('paymentsView').style.display=isPay?'block':'none';
+  document.getElementById('registryView').style.display=isReg?'block':'none';
   document.getElementById('cashflowView').style.display=isCF?'block':'none';
   if(isArch){renderArchive();return;}
   if(isPay){renderPayments();return;}
+  if(filter==='registry'){renderRegistry();return;}
   if(isCF){renderCF();return;}
   var list=filter==='all'?deals:deals.filter(function(d){return d.status===filter;});
   var tbody=document.getElementById('tbody');var empty=document.getElementById('emptyState');
@@ -1018,12 +1047,24 @@ function updateProjectNumField(status){
 }
 function generateProjectNum(){
   var now=new Date();var yy=String(now.getFullYear()).slice(2);var mm=String(now.getMonth()+1).padStart(2,'0');
-  var prefix='AVR'+yy+mm;var max=0;
+  var prefix='AVR'+yy+mm;
+  // Collect ALL used numbers across ALL months to avoid any duplicates
+  var usedNums={};
   deals.forEach(function(d){
-    if(d.id===editId)return;
-    if(d.projectNum&&d.projectNum.startsWith(prefix)){var n=parseInt(d.projectNum.slice(prefix.length))||0;if(n>max)max=n;}
+    if(d.id===editId) return; // skip current deal being edited
+    if(d.projectNum){
+      usedNums[d.projectNum]=true;
+    }
   });
-  return prefix+String(max+1).padStart(3,'0');
+  // Also check project registry
+  try{
+    var reg=JSON.parse(localStorage.getItem('avronis_projects')||'[]');
+    reg.forEach(function(p){if(p.projectNum)usedNums[p.projectNum]=true;});
+  }catch(e){}
+  // Find next available number for this month prefix
+  var n=1;
+  while(usedNums[prefix+String(n).padStart(3,'0')]){n++;}
+  return prefix+String(n).padStart(3,'0');
 }
 
 /* ITEMS */
@@ -1424,6 +1465,53 @@ function drawDonut(id,values,colors,labels){
   ctx.font='8px monospace';ctx.fillStyle='#8B92A5';ctx.fillText('AED',cx,cy+7);
 }
 
+function generateBreakdownCard(allTxs){
+  var capexItems={};var opexItems={};
+  var capexTotal=0;var opexTotal=0;
+  allTxs.forEach(function(t){
+    if(t.type==='income'||t.source==='crm') return;
+    var aed=txAED(t);
+    var cat=t.category||t.type||'Інше';
+    if(t.type==='expense-capex'||t.group==='CAPEX'){
+      capexItems[cat]=(capexItems[cat]||0)+aed; capexTotal+=aed;
+    } else {
+      opexItems[cat]=(opexItems[cat]||0)+aed; opexTotal+=aed;
+    }
+  });
+  function buildRows(items,total,color){
+    var sorted=Object.keys(items).map(function(k){return{k:k,v:items[k]};}).sort(function(a,b){return b.v-a.v;}).slice(0,6);
+    if(!sorted.length) return '<div style="font-size:11px;color:var(--text3);padding:8px 0">Немає транзакцій</div>';
+    return sorted.map(function(r){
+      var pct=total>0?Math.round(r.v/total*100):0;
+      return '<div class="cf-breakdown-row">'
+        +'<span class="cf-breakdown-label" title="'+esc(r.k)+'">'+esc(r.k.split(' ').slice(0,3).join(' '))+'</span>'
+        +'<div style="text-align:right"><div class="cf-breakdown-amount">'+fmtAED(r.v)+'</div>'
+        +'<div class="cf-breakdown-bar"><div class="cf-breakdown-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>'
+        +'</div>';
+    }).join('');
+  }
+  var totalAll=capexTotal+opexTotal;
+  var capexPct=totalAll>0?Math.round(capexTotal/totalAll*100):0;
+  var opexPct=totalAll>0?Math.round(opexTotal/totalAll*100):0;
+  return '<div class="cf-breakdown-card">'
+    +'<div class="cf-breakdown-title">📊 Структура витрат — CAPEX / OPEX</div>'
+    +'<div style="display:flex;gap:16px;margin-bottom:12px;font-size:11px">'
+    +'<span>Всього: <strong style="font-family:var(--mono)">'+fmtAED(totalAll)+'</strong></span>'
+    +'<span style="color:var(--accent2)">CAPEX: <strong>'+capexPct+'%</strong> ('+fmtAED(capexTotal)+')</span>'
+    +'<span style="color:var(--accent)">OPEX: <strong>'+opexPct+'%</strong> ('+fmtAED(opexTotal)+')</span>'
+    +'</div>'
+    +'<div class="cf-breakdown-grid">'
+    +'<div class="cf-breakdown-section">'
+    +'<div class="cf-breakdown-hd"><span style="color:var(--accent2)">CAPEX — Капітальні витрати</span><span class="cf-breakdown-hd-total" style="color:var(--accent2)">'+fmtAED(capexTotal)+'</span></div>'
+    +buildRows(capexItems,capexTotal,'#7C3AED')
+    +'</div>'
+    +'<div class="cf-breakdown-section">'
+    +'<div class="cf-breakdown-hd"><span style="color:var(--accent)">OPEX — Операційні витрати</span><span class="cf-breakdown-hd-total" style="color:var(--accent)">'+fmtAED(opexTotal)+'</span></div>'
+    +buildRows(opexItems,opexTotal,'#2563EB')
+    +'</div>'
+    +'</div></div>';
+}
+
 function generateExtKPIs(allTxs,bankNow,weekData){
   // Critical payments next 14 days
   var now=new Date();var in14=new Date(now.getTime()+14*24*3600*1000);
@@ -1698,6 +1786,173 @@ function editCfTx(id){
     var el=document.getElementById('cfDesc');
     if(el) el.focus();
   },100);
+}
+
+/* ── PROJECT REGISTRY ─────────────────────────────── */
+var PROJ_KEY='avronis_projects';
+
+function loadProjects(){
+  try{return JSON.parse(localStorage.getItem(PROJ_KEY)||'[]');}catch(e){return[];}
+}
+function saveProjects(projects){
+  localStorage.setItem(PROJ_KEY,JSON.stringify(projects));
+}
+
+function syncProjectsFromDeals(){
+  // Auto-create registry entries for deals that have project numbers
+  var projects=loadProjects();
+  var existingNums={};
+  projects.forEach(function(p){existingNums[p.projectNum]=true;});
+  var changed=false;
+  deals.forEach(function(d){
+    if(!d.projectNum) return;
+    if(!existingNums[d.projectNum]){
+      projects.push({
+        projectNum:d.projectNum,
+        client:d.client,
+        dealId:d.id,
+        status:d.status,
+        serviceType:d.serviceType||'',
+        desc:d.desc||'',
+        aggregates:[],
+        created:new Date().toISOString()
+      });
+      existingNums[d.projectNum]=true;
+      changed=true;
+    } else {
+      // Update status from deal
+      projects.forEach(function(p){
+        if(p.projectNum===d.projectNum){
+          p.status=d.status;p.client=d.client;
+        }
+      });
+      changed=true;
+    }
+  });
+  if(changed) saveProjects(projects);
+  return projects;
+}
+
+function renderRegistry(){
+  var el=document.getElementById('registryContent');
+  if(!el) return;
+  var projects=syncProjectsFromDeals();
+  projects.sort(function(a,b){return (b.projectNum||'').localeCompare(a.projectNum||'');});
+
+  var html='<div class="reg-header">'
+    +'<div class="reg-title">📋 Реєстр проектів</div>'
+    +'<div style="font-size:12px;color:var(--text3)">'+projects.length+' проектів · Клікніть на проект щоб внести агрегати</div>'
+    +'</div>';
+
+  if(!projects.length){
+    html+='<div class="reg-empty"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-weight:600">Реєстр порожній</div><div style="margin-top:6px;font-size:12px">Номери проектів з’являться автоматично коли угода отримає статус Договір або В роботі</div></div>';
+    el.innerHTML=html;return;
+  }
+
+  projects.forEach(function(p,pi){
+    var aggrCount=(p.aggregates||[]).length;
+    var statusBadge='<span class="badge '+(p.status||'new')+'">'+(LABELS[p.status]||p.status||'—')+'</span>';
+    html+='<div class="reg-card" id="regCard'+pi+'">'
+      +'<div class="reg-card-hd" onclick="toggleRegCard('+pi+')">'
+      +'<span class="reg-pnum">'+esc(p.projectNum)+'</span>'
+      +'<div><div class="reg-client">'+esc(p.client)+'</div><div style="font-size:11px;color:var(--text3)">'+(p.serviceType?esc(p.serviceType):'')+(p.desc?' · '+esc(p.desc.substring(0,40)):'')+'</div></div>'
+      +'<div class="reg-status">'+statusBadge+'</div>'
+      +'<div class="reg-count">'+(aggrCount>0?aggrCount+' агрегатів':'—')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(p.created?p.created.slice(0,10):'')+'</div>'
+      +'<div style="color:var(--text3);font-size:12px;text-align:center">▼</div>'
+      +'</div>'
+      +'<div class="reg-body">'
+      +'<table class="reg-aggr-table">'
+      +'<thead><tr><th style="width:20%">Тип агрегату</th><th style="width:25%">Заводський №</th><th style="width:15%">К-ть</th><th style="width:20%">Статус роботи</th><th style="width:15%">Нотатка</th><th style="width:5%"></th></tr></thead>'
+      +'<tbody id="aggrBody'+pi+'">'
+      +(p.aggregates||[]).map(function(ag,ai){return renderAggrRow(pi,ai,ag);}).join('')
+      +'</tbody>'
+      +'</table>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<button class="reg-add-aggr" onclick="addAggr('+pi+')">+ Додати агрегат</button>'
+      +'<button class="reg-save-btn" onclick="saveProjectAggr('+pi+')">Зберегти</button>'
+      +'</div>'
+      +'</div>'
+      +'</div>';
+  });
+
+  el.innerHTML=html;
+}
+
+function renderAggrRow(pi,ai,ag){
+  var aggrTypes=['КАУ-30Б','РА-60Б','КАУ-115АМ','УГ-50','Інший'];
+  var workStatuses=['Прийнятий','В роботі','Завершено','Відвантажено'];
+  var typeOpts=aggrTypes.map(function(t){return '<option'+(ag.type===t?' selected':'')+'>'+esc(t)+'</option>';}).join('');
+  var stOpts=workStatuses.map(function(s){return '<option'+(ag.workStatus===s?' selected':'')+'>'+esc(s)+'</option>';}).join('');
+  var sType=JSON.stringify('type');
+  var sSerial=JSON.stringify('serial');
+  var sQty=JSON.stringify('qty');
+  var sWS=JSON.stringify('workStatus');
+  var sNote=JSON.stringify('note');
+  return '<tr>'
+    +'<td><select onchange="updAggr('+pi+','+ai+','+sType+',this.value)">'+typeOpts+'</select></td>'
+    +'<td><input value="'+esc(ag.serial||'')+'" oninput="updAggr('+pi+','+ai+','+sSerial+',this.value)" placeholder="напр. 20920390"></td>'
+    +'<td><input type="number" value="'+(ag.qty||1)+'" oninput="updAggr('+pi+','+ai+','+sQty+',this.value)" min="1" style="width:60px"></td>'
+    +'<td><select onchange="updAggr('+pi+','+ai+','+sWS+',this.value)">'+stOpts+'</select></td>'
+    +'<td><input value="'+esc(ag.note||'')+'" oninput="updAggr('+pi+','+ai+','+sNote+',this.value)" placeholder="нотатка"></td>'
+    +'<td><button class="ibtn del" onclick="delAggr('+pi+','+ai+')">✕</button></td>'
+    +'</tr>';
+}
+function toggleRegCard(pi){
+  var card=document.getElementById('regCard'+pi);
+  if(card) card.classList.toggle('open');
+}
+
+function addAggr(pi){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  if(!projects[pi].aggregates) projects[pi].aggregates=[];
+  projects[pi].aggregates.push({type:'КАУ-115АМ',serial:'',qty:1,workStatus:'Прийнятий',note:''});
+  saveProjects(projects);
+  var tbody=document.getElementById('aggrBody'+pi);
+  if(tbody){
+    var ai=projects[pi].aggregates.length-1;
+    var row=document.createElement('tr');
+    row.outerHTML='';
+    tbody.insertAdjacentHTML('beforeend',renderAggrRow(pi,ai,projects[pi].aggregates[ai]));
+  }
+}
+
+function updAggr(pi,ai,field,val){
+  var projects=loadProjects();
+  if(!projects[pi]||!projects[pi].aggregates[ai]) return;
+  projects[pi].aggregates[ai][field]=field==='qty'?parseInt(val)||1:val;
+  saveProjects(projects);
+}
+
+function delAggr(pi,ai){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  projects[pi].aggregates.splice(ai,1);
+  saveProjects(projects);
+  renderRegistry();
+}
+
+function saveProjectAggr(pi){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  // Read current values from DOM
+  var tbody=document.getElementById('aggrBody'+pi);
+  if(tbody){
+    var rows=tbody.querySelectorAll('tr');
+    rows.forEach(function(row,ai){
+      if(!projects[pi].aggregates[ai]) return;
+      var inputs=row.querySelectorAll('input,select');
+      if(inputs[0]) projects[pi].aggregates[ai].type=inputs[0].value;
+      if(inputs[1]) projects[pi].aggregates[ai].serial=inputs[1].value;
+      if(inputs[2]) projects[pi].aggregates[ai].qty=parseInt(inputs[2].value)||1;
+      if(inputs[3]) projects[pi].aggregates[ai].workStatus=inputs[3].value;
+      if(inputs[4]) projects[pi].aggregates[ai].note=inputs[4].value;
+    });
+  }
+  saveProjects(projects);
+  var btn=document.querySelector('#regCard'+pi+' .reg-save-btn');
+  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){btn.textContent='Зберегти';btn.style.background='';},2000);}
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
