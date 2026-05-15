@@ -747,7 +747,7 @@ var LSKEY='crm_uae_v3';
 var CFKEY='avronis_cf_v1';
 var URLKEY='crm_script_url';
 var FX=3.67;
-var HARDCODED_URL='https://script.google.com/macros/s/AKfycbxE9K3QNNkWsCJxvg0D2QtIaKu5Q77BSi9smzeYxd36AN4MH-5eDziqiPbfeGw9IzeDUw/exec';
+var HARDCODED_URL='https://script.google.com/macros/s/AKfycby1R0rlEjt6XEYhzGLQ_LrEBPBHIE-CcaS6mf9SVIoNZtT2UdhXhv5coq69_DI3NiXQyA/exec';
 
 var deals=[];
 var cfTxs=[];
@@ -1699,3 +1699,10 @@ function editCfTx(id){
     if(el) el.focus();
   },100);
 }
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+init();
+</script>
+</body>
+</html>
