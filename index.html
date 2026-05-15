@@ -244,14 +244,14 @@ tbody tr:hover .td-acts{opacity:1}
 .cf-legend{display:flex;gap:14px}
 .cf-leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .cf-leg-dot{width:8px;height:8px;border-radius:2px}
-canvas#cfChart{width:100%!important;display:block}
+canvas#cfChart{width:100%!important;display:block;min-height:240px}
 
 /* CF DONUT */
 .cf-charts-row{display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-bottom:16px}
-.cf-donut-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
+.cf-donut-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);min-height:220px}
 .cf-donut-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px}
 .donut-wrap{display:flex;align-items:center;gap:20px}
-canvas.donut{width:130px!important;height:130px!important;flex-shrink:0}
+canvas.donut{width:160px!important;height:160px!important;flex-shrink:0}
 .donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
 .donut-leg-row{display:flex;align-items:center;justify-content:space-between;font-size:11px}
 .donut-leg-label{display:flex;align-items:center;gap:5px;color:var(--text2)}
@@ -363,8 +363,9 @@ canvas.donut{width:130px!important;height:130px!important;flex-shrink:0}
 .status-confirm{background:#FFF7ED;color:#D97706}
 .status-paid{background:#ECFDF5;color:#059669}
 .status-topay{background:#FEF2F2;color:#DC2626}
-.cf-tx-critical{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;flex-shrink:0;background:transparent}
-.cf-tx-critical.on{background:#FEF2F2;border-color:#DC2626;color:#DC2626}
+.cf-tx-critical{width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;flex-shrink:0;background:transparent;color:var(--text3)}
+.cf-tx-critical:hover{border-color:var(--red);background:var(--red-light)}
+.cf-tx-critical.on{background:var(--red-light);border-color:var(--red);color:var(--red)}
 .cf-tx-variance{font-family:var(--mono);font-size:10px;text-align:right}
 .variance-pos{color:var(--green)}.variance-neg{color:var(--red)}.variance-zero{color:var(--text3)}
 .cf-tx-actual-input{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:11px;width:90px;color:var(--text);outline:none}
@@ -1396,7 +1397,7 @@ function drawLineChart(weekData,startBal){
 
 function drawDonut(id,values,colors,labels){
   var canvas=document.getElementById(id);if(!canvas)return;
-  var ctx=canvas.getContext('2d');var S=130;
+  var ctx=canvas.getContext('2d');var S=160;
   canvas.width=S*2;canvas.height=S*2;canvas.style.width=S+'px';canvas.style.height=S+'px';ctx.scale(2,2);
   var cx=S/2,cy=S/2,r=48,rIn=30;
   var total=values.reduce(function(a,v){return a+v;},0);
@@ -1584,22 +1585,39 @@ function renderCfTx(t){
   var aed=txAED(t);
   var isCrm=t.source==='crm';
 
-  // Use actual amount if available for display
-  var actualAed=t.actual?toAED(t.actual,t.currency):null;
+  // Use actual amount if available
+  var actualAed=t.actual?toAED(t.actual,t.currency||'AED'):null;
   var displayAed=actualAed!==null?actualAed:aed;
   var variance=actualAed!==null?(actualAed-aed):null;
 
-  // Status badge
+  // Status badge - click cycles through statuses
   var statusMap={plan:'status-plan',topay:'status-topay',paid:'status-paid',confirmed:'status-confirm',received:'status-paid'};
   var statusLbl={plan:'План',topay:'До оплати',paid:'Оплачено',confirmed:'Підтв.',received:'Отримано'};
   var st=t.status||'plan';
+  var txId=t.id;
   var statusHtml=!isCrm
-    ?('<button class="cf-tx-status '+statusMap[st]+'" onclick="cycleCfStatus('+JSON.stringify(t.id)+')">'+statusLbl[st]+'</button>')
+    ?('<button class="cf-tx-status '+statusMap[st]+'" onclick="cycleCfStatus('+JSON.stringify(txId)+');event.stopPropagation()">'+statusLbl[st]+'</button>')
     :'<span class="cf-tx-status status-confirm">CRM</span>';
 
-  // Critical badge
+  // Fact button
+  var factLabel=t.actual?('✓ '+fmtAED(toAED(t.actual,t.currency||'AED'))):'+ факт';
+  var factBtn=!isCrm
+    ?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQuickActual('+JSON.stringify(txId)+',event);event.stopPropagation()">'+factLabel+'</button>')
+    :'<span></span>';
+
+  // Critical toggle - show 🚨 icon
   var critHtml=!isCrm
-    ?('<div class="cf-tx-critical'+(t.critical?' on':'')+'" onclick="toggleCfCritical('+JSON.stringify(t.id)+')" title="Критичний платіж">'+(t.critical?'🚨':'')+'</div>')
+    ?('<div class="cf-tx-critical'+(t.critical?' on':'')+'" onclick="toggleCfCritical('+JSON.stringify(txId)+');event.stopPropagation()" title="Критичний платіж">'+(t.critical?'🚨':'☐')+'</div>')
+    :'<span></span>';
+
+  // Edit button
+  var editBtn=!isCrm
+    ?('<button class="cf-del" onclick="editCfTx('+JSON.stringify(txId)+');event.stopPropagation()" title="Редагувати">✎</button>')
+    :'<span></span>';
+
+  // Delete button
+  var delBtn=!isCrm
+    ?('<button class="cf-del" onclick="delCfTx('+JSON.stringify(txId)+');event.stopPropagation()">✕</button>')
     :'<span></span>';
 
   // Variance
@@ -1611,22 +1629,18 @@ function renderCfTx(t){
   }
 
   var catTxt=t.category||t.desc||'—';
+  var descTxt=(t.desc&&t.category&&t.desc!==t.category)?('<br><span style="font-size:10px;color:var(--text3);font-style:italic">'+esc(t.desc)+'</span>'):'';
   var crmBadge=isCrm?'<span style="font-size:9px;background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:var(--mono)">CRM</span>':'';
-  var editBtn=!isCrm?('<button class="cf-del" onclick="editCfTx('+JSON.stringify(t.id)+')" title="Редагувати">✎</button>'):'<span></span>';
-  var delBtn=!isCrm?('<button class="cf-del" onclick="delCfTx('+JSON.stringify(t.id)+')">✕</button>'):'<span></span>';
   var amtExtra=t.currency==='USD'?'<br><span style="font-size:9px;color:var(--text3)">$'+Math.round(parseFloat(t.amount)||0).toLocaleString()+'</span>':'';
 
-  // Highlight row based on status
+  // Row background
   var rowBg='';
   if(t.critical) rowBg='background:#FFF5F5;border-color:#FECACA;';
   else if(st==='paid'||st==='received') rowBg='background:#F8FFF9;';
 
-  // Fact button
-  var factBtn=!isCrm?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQuickActual('+JSON.stringify(t.id)+',event)" title="Внести факт">'+(t.actual?'✓ '+fmtAED(toAED(t.actual,t.currency||'AED')):'+ факт')+'</button>'):'<span></span>';
-
-  return '<div class="cf-tx" style="grid-template-columns:90px 1fr 90px 60px 70px 80px 60px 28px 28px;'+rowBg+'">'
+  return '<div class="cf-tx" style="grid-template-columns:90px 1fr 100px 60px 70px 80px 60px 24px 24px;'+rowBg+'">'
     +'<span class="cf-tx-date">'+(t.date||'—')+'</span>'
-    +'<span class="cf-tx-desc">'+crmBadge+esc(catTxt)+'</span>'
+    +'<span class="cf-tx-desc">'+esc(catTxt)+crmBadge+descTxt+'</span>'
     +'<span class="cf-tx-amt '+tm[2]+'">'+sign+fmtAED(displayAed)+amtExtra+'</span>'
     +'<span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'
     +statusHtml
@@ -1660,207 +1674,28 @@ function delCfTx(id){if(!confirm('Видалити транзакцію?'))retur
 function setCfMonth(m){cfMonth=m;renderCF();}
 
 function editCfTx(id){
+  if(typeof id !== 'string' && typeof id !== 'number') return;
   cfEditId=id;
   var tx=cfTxs.find(function(t){return t.id===id;});
-  if(!tx)return;
+  if(!tx){console.warn('TX not found:',id);return;}
   document.getElementById('cfDate').value=tx.date||'';
   document.getElementById('cfType').value=tx.type||'expense-opex';
   document.getElementById('cfGroup').value=tx.group||'OPEX';
-  document.getElementById('cfCategory').value=tx.category||'';
+  var catEl=document.getElementById('cfCategory');
+  if(catEl) catEl.value=tx.category||'';
   document.getElementById('cfDesc').value=tx.desc||'';
   document.getElementById('cfAmount').value=tx.amount||'';
   document.getElementById('cfActual').value=tx.actual||'';
   document.getElementById('cfNote').value=tx.note||'';
   document.getElementById('cfCritical').checked=tx.critical||false;
   updateCfStatus();
-  document.getElementById('cfStatus').value=tx.status||'plan';
+  var stEl=document.getElementById('cfStatus');
+  if(stEl) stEl.value=tx.status||'plan';
   setCfCur(tx.currency||'AED');
-  document.getElementById('cfOverlay').classList.add('open');
-  setTimeout(function(){document.getElementById('cfDesc').focus();},100);
+  var overlay=document.getElementById('cfOverlay');
+  if(overlay) overlay.classList.add('open');
+  setTimeout(function(){
+    var el=document.getElementById('cfDesc');
+    if(el) el.focus();
+  },100);
 }
-/* CF MODAL */
-function setCfCur(c){cfCur=c;document.getElementById('cfCurUSD').classList.toggle('active',c==='USD');document.getElementById('cfCurAED').classList.toggle('active',c==='AED');}
-function openCfModal(date,type){
-  cfEditId=null;
-  document.getElementById('cfDate').value=date||new Date().toISOString().slice(0,10);
-  document.getElementById('cfType').value=type||'expense-opex';
-  document.getElementById('cfGroup').value=type&&type.includes('capex')?'CAPEX':'OPEX';
-  document.getElementById('cfDesc').value='';
-  document.getElementById('cfAmount').value='';
-  document.getElementById('cfActual').value='';
-  document.getElementById('cfNote').value='';
-  document.getElementById('cfCritical').checked=false;
-  updateCfStatus();
-  setCfCur('AED');
-  document.getElementById('cfOverlay').classList.add('open');
-  setTimeout(function(){document.getElementById('cfDesc').focus();},100);
-}
-function updateCfStatus(){
-  var type=document.getElementById('cfType').value;
-  var sel=document.getElementById('cfStatus');
-  sel.innerHTML=type==='income'
-    ?'<option value="plan">📋 План</option><option value="confirmed">🟡 Підтверджено</option><option value="received">✅ Отримано</option>'
-    :'<option value="plan">📋 План</option><option value="topay">🔴 До оплати</option><option value="paid">✅ Оплачено</option>';
-}
-function closeCfModal(){document.getElementById('cfOverlay').classList.remove('open');cfEditId=null;}
-document.getElementById('cfOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('cfOverlay'))closeCfModal();});
-function saveCfTx(){
-  var date=document.getElementById('cfDate').value;
-  var type=document.getElementById('cfType').value;
-  var desc=document.getElementById('cfDesc').value.trim();
-  var amount=parseFloat(document.getElementById('cfAmount').value);
-  var actual=parseFloat(document.getElementById('cfActual').value)||null;
-  var note=document.getElementById('cfNote').value.trim();
-  var category=document.getElementById('cfCategory').value;
-  var group=document.getElementById('cfGroup').value;
-  var status=document.getElementById('cfStatus').value;
-  var critical=document.getElementById('cfCritical').checked;
-  if(!date||!desc||!amount||amount<=0){alert('Заповніть дату, опис та суму');return;}
-  if(cfEditId){
-    var idx2=cfTxs.findIndex(function(t){return t.id===cfEditId;});
-    if(idx2>-1) cfTxs[idx2]={id:cfEditId,date:date,type:type,desc:desc,amount:amount,actual:actual,currency:cfCur,note:note,source:'manual',category:category,group:group,status:status,critical:critical,created:cfTxs[idx2].created||new Date().toISOString()};
-  } else {
-    cfTxs.push({id:'tx_'+Date.now(),date:date,type:type,desc:desc,amount:amount,actual:actual,currency:cfCur,note:note,source:'manual',category:category,group:group,status:status||'plan',critical:critical||false,created:new Date().toISOString()});
-  }
-  saveCfLocal();closeCfModal();renderCF();
-}
-var quickActualTxId=null;
-
-function openQuickActual(txId,event){
-  event.stopPropagation();
-  var tx=cfTxs.find(function(t){return t.id===txId;});
-  if(!tx)return;
-  quickActualTxId=txId;
-  var popup=document.getElementById('quickActualPopup');
-  var desc=document.getElementById('quickActualDesc');
-  var input=document.getElementById('quickActualInput');
-  var cat=tx.category||tx.desc||'—';
-  desc.textContent=cat+' | Плановано: '+fmtCur(parseFloat(tx.amount)||0,tx.currency||'AED');
-  input.value=tx.actual||tx.amount||'';
-  input.placeholder='Факт у '+(tx.currency||'AED');
-  // Position near click
-  var rect=event.target.getBoundingClientRect();
-  popup.style.display='block';
-  popup.style.top=(rect.bottom+window.scrollY+6)+'px';
-  popup.style.left=Math.min(rect.left,window.innerWidth-250)+'px';
-  setTimeout(function(){input.focus();input.select();},50);
-}
-
-function saveQuickActual(){
-  if(!quickActualTxId)return;
-  var val=parseFloat(document.getElementById('quickActualInput').value);
-  if(isNaN(val)||val<0){alert('Введіть коректну суму');return;}
-  var tx=cfTxs.find(function(t){return t.id===quickActualTxId;});
-  if(tx){
-    tx.actual=val;
-    // Auto-update status based on actual
-    if(tx.type==='income'&&tx.status==='plan') tx.status='received';
-    else if(tx.type!=='income'&&tx.status==='plan') tx.status='paid';
-    saveCfLocal();
-  }
-  closeQuickActual();
-  renderCF();
-}
-
-function closeQuickActual(){
-  document.getElementById('quickActualPopup').style.display='none';
-  quickActualTxId=null;
-}
-
-// Close popup on outside click
-document.addEventListener('click',function(e){
-  var popup=document.getElementById('quickActualPopup');
-  if(popup&&popup.style.display==='block'&&!popup.contains(e.target)){
-    closeQuickActual();
-  }
-});
-
-// Enter key in popup
-document.addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&quickActualTxId) saveQuickActual();
-  if(e.key==='Escape'&&quickActualTxId) closeQuickActual();
-});
-
-function generateBreakdownCard(allTxs){
-  var capexItems={};var opexItems={};
-  var capexTotal=0;var opexTotal=0;
-
-  allTxs.forEach(function(t){
-    if(t.type==='income'||t.source==='crm') return;
-    var aed=txAED(t);
-    var cat=t.category||t.type||'Інше';
-    if(t.type==='expense-capex'||t.group==='CAPEX'){
-      capexItems[cat]=(capexItems[cat]||0)+aed;
-      capexTotal+=aed;
-    } else {
-      opexItems[cat]=(opexItems[cat]||0)+aed;
-      opexTotal+=aed;
-    }
-  });
-
-  function buildRows(items,total,color){
-    var sorted=Object.keys(items).map(function(k){return{k:k,v:items[k]};}).sort(function(a,b){return b.v-a.v;}).slice(0,6);
-    if(!sorted.length) return '<div style="font-size:11px;color:var(--text3);padding:8px 0">Немає транзакцій</div>';
-    return sorted.map(function(r){
-      var pct=total>0?Math.round(r.v/total*100):0;
-      return '<div class="cf-breakdown-row">'
-        +'<span class="cf-breakdown-label" title="'+r.k+'">'+r.k.split(' ').slice(0,3).join(' ')+'</span>'
-        +'<div style="text-align:right">'
-        +'<div class="cf-breakdown-amount">'+fmtAED(r.v)+'</div>'
-        +'<div class="cf-breakdown-bar"><div class="cf-breakdown-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'
-        +'</div>'
-        +'</div>';
-    }).join('');
-  }
-
-  var totalAll=capexTotal+opexTotal;
-  var capexPct=totalAll>0?Math.round(capexTotal/totalAll*100):0;
-  var opexPct=totalAll>0?Math.round(opexTotal/totalAll*100):0;
-
-  return '<div class="cf-breakdown-card">'
-    +'<div class="cf-breakdown-title">📊 Структура витрат — CAPEX / OPEX</div>'
-    +'<div style="display:flex;gap:16px;margin-bottom:12px;font-size:11px">'
-    +'<span>Всього витрат: <strong style="font-family:var(--mono)">'+fmtAED(totalAll)+'</strong></span>'
-    +'<span style="color:var(--accent2)">CAPEX: <strong>'+capexPct+'%</strong></span>'
-    +'<span style="color:var(--accent)">OPEX: <strong>'+opexPct+'%</strong></span>'
-    +'</div>'
-    +'<div class="cf-breakdown-grid">'
-    +'<div class="cf-breakdown-section">'
-    +'<div class="cf-breakdown-hd"><span style="color:var(--accent2)">CAPEX</span><span class="cf-breakdown-hd-total" style="color:var(--accent2)">'+fmtAED(capexTotal)+'</span></div>'
-    +buildRows(capexItems,capexTotal,'#7C3AED')
-    +'</div>'
-    +'<div class="cf-breakdown-section">'
-    +'<div class="cf-breakdown-hd"><span style="color:var(--accent)">OPEX</span><span class="cf-breakdown-hd-total" style="color:var(--accent)">'+fmtAED(opexTotal)+'</span></div>'
-    +buildRows(opexItems,opexTotal,'#2563EB')
-    +'</div>'
-    +'</div>'
-    +'</div>';
-}
-
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-init();
-</script>
-<div class="quick-actual-overlay" id="qaOverlay" onclick="if(event.target===this)closeQA()">
-  <div class="quick-actual-popup">
-    <div class="qa-title" id="qaTitle">Ввести фактичну суму</div>
-    <div class="qa-desc" id="qaDesc"></div>
-    <div class="qa-row">
-      <input type="number" class="qa-input" id="qaInput" placeholder="0" min="0">
-      <button class="qa-save" onclick="saveQA()">✓</button>
-      <button class="qa-cancel" onclick="closeQA()">✕</button>
-    </div>
-  </div>
-</div>
-
-<!-- QUICK ACTUAL POPUP -->
-<div class="quick-actual-popup" id="quickActualPopup" style="display:none">
-  <div class="quick-actual-title">✎ Внести факт</div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="quickActualDesc"></div>
-  <input type="number" class="quick-actual-input" id="quickActualInput" placeholder="Фактична сума (AED/USD)">
-  <div class="quick-actual-row">
-    <button class="quick-actual-save" onclick="saveQuickActual()">Зберегти</button>
-    <button class="quick-actual-cancel" onclick="closeQuickActual()">Скасувати</button>
-  </div>
-</div>
-</body>
-</html>
