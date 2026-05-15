@@ -1,1 +1,1963 @@
-redirect
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVRONIS · Deal Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface2: #F0F2F5;
+  --surface3: #E8EBF0;
+  --border: #E2E5EC;
+  --border2: #CDD2DC;
+  --text: #1A1D23;
+  --text2: #4A5168;
+  --text3: #8B92A5;
+  --accent: #2563EB;
+  --accent-light: #EFF4FF;
+  --accent2: #7C3AED;
+  --green: #059669;
+  --green-light: #ECFDF5;
+  --red: #DC2626;
+  --red-light: #FEF2F2;
+  --amber: #D97706;
+  --amber-light: #FFFBEB;
+  --teal: #0D9488;
+  --teal-light: #F0FDFA;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font: 'Sora', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.logo{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.hbadge{font-size:11px;color:var(--text3);background:var(--surface2);padding:3px 8px;border-radius:20px;font-family:var(--mono)}
+.save-badge{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text3);font-family:var(--mono);transition:all .3s}
+.save-badge.ok{color:var(--green);border-color:#BBF7D0;background:var(--green-light)}
+.save-badge.err{color:var(--red);border-color:#FECACA;background:var(--red-light)}
+.save-badge.saving{color:var(--amber);border-color:#FDE68A;background:var(--amber-light)}
+.ml{margin-left:auto}
+.btn-primary{padding:7px 16px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary:hover{background:#1D4ED8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+
+/* MAIN */
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+
+/* SETUP BANNER */
+.setup-banner{background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1px solid #FDE68A;border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.setup-banner.hidden{display:none}
+.setup-banner-text{font-size:13px;color:var(--amber);font-weight:500;flex:1}
+.setup-row{display:flex;gap:8px;flex:2}
+.setup-row input{flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none}
+.setup-row input:focus{border-color:var(--accent)}
+.btn-connect{padding:7px 14px;border-radius:var(--radius-sm);background:var(--amber);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap}
+.btn-local{padding:7px 12px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);transition:all .2s}
+.kpi:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.kpi-val{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
+.kpi-aed{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:3px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.kpi-bar{height:3px;border-radius:2px;margin-top:10px;background:var(--surface3)}
+.kpi-bar-fill{height:100%;border-radius:2px}
+
+/* TABS */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--radius-sm)}
+.tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);font-weight:600}
+.tab.cf-tab.active{background:var(--teal);color:#fff}
+.tab.pay-tab.active{background:var(--accent2);color:#fff}
+
+/* TABLE */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead tr{background:var(--surface2)}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:11px 14px;font-size:13px;vertical-align:middle}
+.td-name{font-weight:600;color:var(--text)}
+.td-dim{color:var(--text3);font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-mono{font-family:var(--mono);font-size:12px;font-weight:500}
+.td-aed{display:block;font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.td-acts{display:flex;gap:4px;opacity:0;transition:opacity .15s}
+tbody tr:hover .td-acts{opacity:1}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%}
+.badge.won{background:var(--green-light);color:var(--green)}.badge.won::before{background:var(--green)}
+.badge.lost{background:var(--red-light);color:var(--red)}.badge.lost::before{background:var(--red)}
+.badge.pause{background:var(--amber-light);color:var(--amber)}.badge.pause::before{background:var(--amber)}
+.badge.new{background:#EFF6FF;color:#2563EB}.badge.new::before{background:#2563EB}
+.badge.contract{background:#F5F3FF;color:#7C3AED}.badge.contract::before{background:#7C3AED}
+.badge.invoice{background:#FFF7ED;color:#EA580C}.badge.invoice::before{background:#EA580C}
+.badge.work{background:#F0FDF4;color:#16A34A}.badge.work::before{background:#16A34A}
+
+.pnum{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-light);padding:2px 6px;border-radius:4px;font-weight:500;margin-left:6px}
+.prob-row{display:flex;align-items:center;gap:6px}
+.prob-bar{width:44px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.prob-fill{height:100%;border-radius:2px}
+.ibtn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.ibtn:hover{background:var(--surface2);color:var(--text)}
+.ibtn.del:hover{border-color:#FECACA;background:var(--red-light);color:var(--red)}
+.ibtn.edit:hover{border-color:#BFDBFE;background:var(--accent-light);color:var(--accent)}
+.empty{text-align:center;padding:52px 24px;color:var(--text3)}
+.empty-ico{font-size:32px;margin-bottom:10px;opacity:.4}
+
+/* CURRENCY TOGGLE */
+.cur-toggle{display:flex;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.cur-btn{flex:1;padding:8px 0;background:transparent;border:none;color:var(--text2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .15s;font-weight:500}
+.cur-btn.active{background:var(--accent);color:#fff}
+.price-preview{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px;min-height:14px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:720px;max-width:100%;max-height:90vh;overflow-y:auto;transform:translateY(12px) scale(.98);transition:transform .22s;box-shadow:var(--shadow-lg)}
+.overlay.open .modal{transform:none}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.m-title{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.m-tabs{display:flex;gap:3px;background:var(--surface2);padding:3px;border-radius:var(--radius-sm)}
+.mtab{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .15s}
+.mtab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow-sm)}
+.mclose{margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.mclose:hover{background:var(--red-light);border-color:#FECACA;color:var(--red)}
+.mb{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+.mpanel{display:none;flex-direction:column;gap:14px}
+.mpanel.active{display:flex}
+.mf{padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn-cancel{padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{background:var(--surface2)}
+.btn-save{padding:8px 22px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-save:hover{background:#1D4ED8}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fc{display:flex;flex-direction:column;gap:5px}
+.fc.span2{grid-column:1/-1}
+.fc label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.fc input,.fc select,.fc textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s;width:100%}
+.fc input:focus,.fc select:focus,.fc textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.fc textarea{resize:vertical;min-height:60px;line-height:1.5}
+.fc select option{background:var(--surface)}
+
+/* ITEMS TABLE */
+.items-tbl{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden}
+.items-tbl th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);background:var(--surface3)}
+.items-tbl td{padding:6px 8px;border-top:1px solid var(--border);vertical-align:middle}
+.items-tbl input{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--font);font-size:12px;width:100%;outline:none;transition:border-color .15s}
+.items-tbl input:focus{border-color:var(--accent)}
+.item-sum{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);padding:6px 8px}
+.items-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 4px 0}
+.items-total{font-size:13px;font-family:var(--mono);color:var(--text);font-weight:600}
+.btn-link{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-family:var(--font);font-weight:500;padding:0;display:inline-flex;align-items:center;gap:4px}
+.btn-link:hover{color:#1D4ED8}
+
+/* PAYMENT CALCULATOR */
+.calc-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-top:12px}
+.calc-box-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.calc-total-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.calc-total-lbl{font-size:12px;color:var(--text2)}
+.calc-total-val{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text)}
+.calc-part-row{display:grid;grid-template-columns:1fr 130px 70px 70px 90px 28px;gap:8px;align-items:center;margin-bottom:8px}
+.calc-part-qty{font-size:11px;color:var(--text3);text-align:center;padding:2px 0}
+.calc-part-input{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s;width:100%}
+.calc-part-input:focus{border-color:var(--accent)}
+.calc-part-pct{position:relative}
+.calc-part-pct input{padding-right:22px}
+.calc-part-pct span{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text3)}
+.calc-part-amt{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--accent);text-align:right}
+.calc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.calc-remainder{font-size:12px;color:var(--text3)}
+.btn-calc-transfer{padding:7px 14px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:all .15s}
+.btn-calc-transfer:hover{background:#1D4ED8}
+
+/* PAYMENT LIST */
+.pay-item{display:grid;grid-template-columns:1fr 120px 130px auto auto;gap:8px;align-items:end;margin-bottom:10px}
+.pay-toggle{font-size:11px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid;font-family:var(--font);font-weight:600;background:transparent;transition:all .15s}
+.pay-toggle.pending{color:var(--amber);border-color:#FDE68A;background:var(--amber-light)}
+.pay-toggle.paid{color:var(--green);border-color:#BBF7D0;background:var(--green-light)}
+.pay-summary{font-size:12px;color:var(--text3);padding:10px 0;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;margin-top:4px}
+.pay-summary strong{font-family:var(--mono);color:var(--text)}
+
+/* PROJECT NUM */
+.pnum-row{display:flex;align-items:center;gap:10px}
+.pnum-input{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent);background:var(--accent-light);cursor:default;flex:1;border-color:var(--accent)!important}
+.pnum-status{font-size:11px;white-space:nowrap;color:var(--text3)}
+
+/* PAYMENTS TAB */
+.pay-month-section{margin-bottom:20px}
+.pay-month-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:8px}
+.pay-month-lbl{font-size:13px;font-weight:700;color:var(--text)}
+.pay-month-total{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text2)}
+.pay-month-recv{font-size:11px;color:var(--green);font-family:var(--mono)}
+.pay-row{display:grid;grid-template-columns:1fr 1fr 110px 90px 90px;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.pay-row:hover{border-color:var(--accent);background:var(--accent-light)}
+.pay-row-client{font-weight:600;font-size:13px}
+.pay-row-desc{font-size:12px;color:var(--text3)}
+.pay-row-amt{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right}
+.pay-row-date{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.pay-status-pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;text-align:center}
+.pill-recv{background:var(--green-light);color:var(--green)}
+.pill-pend{background:var(--amber-light);color:var(--amber)}
+.pay-summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.pay-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
+.pay-sum-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.pay-sum-val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text)}
+.pay-sum-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* CASH FLOW */
+.cf-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.cf-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);border-left:3px solid transparent;transition:all .2s}
+.cf-kpi:hover{box-shadow:var(--shadow)}
+.cf-kpi.bank{border-left-color:var(--teal);cursor:pointer}
+.cf-kpi.bank:hover{border-color:var(--teal);background:var(--teal-light)}
+.cf-kpi.inc{border-left-color:var(--accent)}
+.cf-kpi.out{border-left-color:var(--red)}
+.cf-kpi.net-ok{border-left-color:var(--green)}
+.cf-kpi.net-bad{border-left-color:var(--red)}
+.cf-kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.cf-kpi-val{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1}
+.cf-kpi-sub{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+.v-teal{color:var(--teal)}.v-blue{color:var(--accent)}.v-red{color:var(--red)}.v-green{color:var(--green)}
+
+/* CF CHART */
+.cf-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.cf-chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cf-chart-title{font-size:13px;font-weight:600;color:var(--text)}
+.cf-legend{display:flex;gap:14px}
+.cf-leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.cf-leg-dot{width:8px;height:8px;border-radius:2px}
+canvas#cfChart{width:100%!important;display:block;min-height:240px}
+
+/* CF DONUT */
+.cf-charts-row{display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-bottom:16px}
+.cf-donut-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);min-height:220px}
+.cf-donut-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px}
+.donut-wrap{display:flex;align-items:center;gap:20px}
+canvas.donut{width:160px!important;height:160px!important;flex-shrink:0}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
+.donut-leg-row{display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.donut-leg-label{display:flex;align-items:center;gap:5px;color:var(--text2)}
+.donut-leg-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.donut-leg-val{font-family:var(--mono);font-weight:500;color:var(--text)}
+
+/* CF CONTROLS */
+.cf-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.cf-months{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.cf-mbtn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;transition:all .15s}
+.cf-mbtn:hover{border-color:var(--teal);color:var(--teal)}
+.cf-mbtn.active{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+.cf-print-btn{padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s}
+.cf-print-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cf-add-btn{padding:6px 14px;border-radius:var(--radius-sm);background:var(--teal);border:none;color:#fff;font-size:12px;font-family:var(--font);font-weight:600;cursor:pointer;transition:all .15s}
+.cf-add-btn:hover{background:#0F766E}
+
+/* CF WEEKS */
+.cf-weeks{display:flex;flex-direction:column;gap:8px}
+.cf-week{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .2s;box-shadow:var(--shadow-sm)}
+.cf-week.w-danger{border-color:#FECACA}
+.cf-week.w-warn{border-color:#FDE68A}
+.cf-week.w-past{opacity:.75}
+.cf-wh{display:grid;grid-template-columns:210px 1fr 1fr 1fr 160px 28px;align-items:center;padding:12px 16px;cursor:pointer}
+.cf-wh:hover{background:var(--surface2)}
+.cf-wlbl strong{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:1px}
+.cf-wlbl span{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.cf-wlbl small{font-size:10px;color:var(--text3);font-family:var(--mono);display:block;margin-top:2px}
+.cf-wcol{padding:0 10px}
+.cf-wcol-l{font-size:9px;color:var(--text3);letter-spacing:.4px;margin-bottom:2px;text-transform:uppercase;font-weight:600}
+.cf-wcol-v{font-family:var(--mono);font-size:12px;font-weight:600}
+.col-in{color:var(--teal)}.col-out{color:var(--red)}.col-debt{color:var(--amber)}
+.cf-pill{padding:4px 12px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:600;text-align:center}
+.pill-ok{background:var(--green-light);color:var(--green)}
+.pill-warn{background:var(--amber-light);color:var(--amber)}
+.pill-danger{background:var(--red-light);color:var(--red)}
+.cf-chev{color:var(--text3);font-size:10px;transition:transform .2s;text-align:center}
+.cf-week.open .cf-chev{transform:rotate(180deg)}
+.cf-wb{display:none;border-top:1px solid var(--border);padding:14px 16px;background:var(--surface2)}
+.cf-week.open .cf-wb{display:block}
+.cf-txlist{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.cf-tx{display:grid;grid-template-columns:100px 1fr 120px 80px 110px 28px;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .15s}
+.cf-tx:hover{border-color:var(--accent-light);box-shadow:var(--shadow-sm)}
+.cf-tx-date{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.cf-tx-desc{font-size:12px;color:var(--text);font-weight:500}
+.cf-tx-amt{font-family:var(--mono);font-size:12px;font-weight:600;text-align:right}
+.amt-in{color:var(--teal)}.amt-out{color:var(--red)}.amt-debt{color:var(--amber)}
+.cf-tx-badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;text-align:center}
+.b-capex{background:#F5F3FF;color:var(--accent2)}
+.b-opex{background:#EFF6FF;color:var(--accent)}
+.b-debt{background:var(--amber-light);color:var(--amber)}
+.b-income{background:var(--teal-light);color:var(--teal)}
+.cf-tx-src{font-size:10px;color:var(--text3)}
+.cf-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;transition:all .15s}
+.cf-del:hover{color:var(--red);background:var(--red-light)}
+.cf-empty{padding:8px;font-size:11px;color:var(--text3);font-style:italic}
+.cf-qadd{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.cf-qbtn{padding:4px 10px;background:transparent;border:1px dashed var(--border2);border-radius:var(--radius-sm);color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.cf-qbtn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-light)}
+
+/* CF MODAL */
+.cf-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.cf-overlay.open{opacity:1;pointer-events:all}
+.cf-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:480px;max-width:100%;box-shadow:var(--shadow-lg);transform:translateY(10px) scale(.98);transition:transform .2s}
+.cf-overlay.open .cf-modal{transform:none}
+.cf-mh{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cf-mtitle{font-size:15px;font-weight:700;color:var(--teal)}
+.cf-mb{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.cf-mf{padding:12px 20px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.cf-save-btn{padding:8px 20px;border-radius:var(--radius-sm);background:var(--teal);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.cf-save-btn:hover{background:#0F766E}
+
+/* ARCHIVE */
+.arch-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+
+
+
+/* MONTHLY DASHBOARD */
+.cf-monthly-dash{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.cf-monthly-dash-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.cf-monthly-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.cf-monthly-strip::-webkit-scrollbar{display:none}
+.cf-month-card{flex-shrink:0;width:120px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .2s}
+.cf-month-card:hover{border-color:var(--teal);background:var(--teal-light)}
+.cf-month-card.active{border-color:var(--teal);background:var(--teal);color:#fff}
+.cf-month-card.has-gap{border-color:#FECACA}
+.cf-month-card.has-gap.active{background:var(--red);border-color:var(--red)}
+.cf-month-card-name{font-size:11px;font-weight:600;margin-bottom:6px}
+.cf-month-card.active .cf-month-card-name{color:#fff}
+.cf-month-card-bal{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green)}
+.cf-month-card.active .cf-month-card-bal{color:#fff}
+.cf-month-card-bal.neg{color:var(--red)}
+.cf-month-card.active .cf-month-card-bal.neg{color:#FCA5A5}
+.cf-month-card-sub{font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+.cf-month-card.active .cf-month-card-sub{color:rgba(255,255,255,0.7)}
+.cf-month-card-gap{font-size:9px;color:var(--red);margin-top:2px;font-weight:600}
+.cf-month-card.active .cf-month-card-gap{color:#FCA5A5}
+
+/* PAYMENT DISTRIBUTION INDICATOR */
+.deal-pay-indicator{display:flex;align-items:center;gap:6px;margin-top:4px}
+.deal-pay-bar-wrap{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;max-width:80px}
+.deal-pay-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.deal-pay-pct{font-size:10px;font-family:var(--mono);font-weight:600}
+.deal-pay-missing{font-size:10px;color:var(--red);font-family:var(--mono)}
+
+/* PLANNED / ACTUAL / STATUS */
+.cf-tx-status{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s;white-space:nowrap}
+.status-plan{background:#EFF6FF;color:#2563EB}
+.status-confirm{background:#FFF7ED;color:#D97706}
+.status-paid{background:#ECFDF5;color:#059669}
+.status-topay{background:#FEF2F2;color:#DC2626}
+.cf-tx-critical{width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;flex-shrink:0;background:transparent;color:var(--text3)}
+.cf-tx-critical:hover{border-color:var(--red);background:var(--red-light)}
+.cf-tx-critical.on{background:var(--red-light);border-color:var(--red);color:var(--red)}
+.cf-tx-variance{font-family:var(--mono);font-size:10px;text-align:right}
+.variance-pos{color:var(--green)}.variance-neg{color:var(--red)}.variance-zero{color:var(--text3)}
+.cf-tx-actual-input{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:11px;width:90px;color:var(--text);outline:none}
+.cf-tx-actual-input:focus{border-color:var(--teal)}
+.cf-tx-comment{font-size:10px;color:var(--text3);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+
+/* RISK STATUS */
+.week-risk-green{background:#ECFDF5!important;border-left:3px solid #059669!important}
+.week-risk-yellow{background:#FFFBEB!important;border-left:3px solid #D97706!important}
+.week-risk-red{background:#FEF2F2!important;border-left:3px solid #DC2626!important}
+.risk-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.risk-green{background:#ECFDF5;color:#059669}
+.risk-yellow{background:#FFFBEB;color:#D97706}
+.risk-red{background:#FEF2F2;color:#DC2626}
+
+/* FREE CASH / RUNWAY / GAP DATE */
+.cf-kpi-grid-ext{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.cf-kpi-sm{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:3px solid transparent}
+.cf-kpi-sm.free{border-left-color:#7C3AED}
+.cf-kpi-sm.runway{border-left-color:#0D9488}
+.cf-kpi-sm.gap{border-left-color:#DC2626}
+.cf-kpi-sm.critical{border-left-color:#D97706}
+.cf-kpi-sm-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.cf-kpi-sm-val{font-family:var(--mono);font-size:18px;font-weight:700;line-height:1;color:var(--text)}
+.cf-kpi-sm-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+
+/* MINIMUM SAFE BALANCE line on chart */
+.cf-min-balance-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--text3)}
+.cf-min-balance-row input{width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none}
+.cf-min-balance-row input:focus{border-color:var(--red)}
+.cf-min-line{display:inline-block;width:20px;height:2px;background:#DC2626;margin-right:4px;border-top:2px dashed #DC2626;vertical-align:middle}
+
+/* CAPEX/OPEX SUMMARY */
+.cf-capex-opex{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cf-co-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
+.cf-co-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.cf-co-total{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text)}
+.cf-co-rows{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.cf-co-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;gap:8px}
+.cf-co-row-label{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cf-co-row-bar{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;max-width:80px}
+.cf-co-row-fill{height:100%;border-radius:2px}
+.cf-co-row-val{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;min-width:80px;text-align:right}
+.cf-co-row-pct{font-size:10px;color:var(--text3);font-family:var(--mono);min-width:32px;text-align:right}
+
+/* QUICK ACTUAL POPUP */
+.quick-actual-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .15s}
+.quick-actual-overlay.open{opacity:1;pointer-events:all}
+.quick-actual-popup{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:18px 20px;width:320px;box-shadow:var(--shadow-lg);transform:scale(.96);transition:transform .15s}
+.quick-actual-overlay.open .quick-actual-popup{transform:none}
+.qa-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.qa-desc{font-size:11px;color:var(--text3);margin-bottom:14px}
+.qa-row{display:flex;gap:8px;align-items:center}
+.qa-input{flex:1;background:var(--surface2);border:1.5px solid var(--teal);border-radius:var(--radius-sm);padding:9px 12px;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);outline:none}
+.qa-save{padding:9px 16px;border-radius:var(--radius-sm);background:var(--teal);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer}
+.qa-save:hover{background:#0F766E}
+.qa-cancel{padding:9px 12px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer}
+.cf-quick-fact-btn{background:none;border:1px dashed var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;font-size:10px;padding:2px 6px;font-family:var(--font);transition:all .15s;white-space:nowrap}
+.cf-quick-fact-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-light)}
+
+/* QUICK ACTUAL POPUP */
+.quick-actual-popup{position:fixed;z-index:400;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-lg);width:240px}
+.quick-actual-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px}
+.quick-actual-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;margin-bottom:8px}
+.quick-actual-input:focus{border-color:var(--teal)}
+.quick-actual-row{display:flex;gap:6px}
+.quick-actual-save{flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--teal);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer}
+.quick-actual-cancel{padding:7px 10px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer}
+.cf-fact-btn{padding:2px 6px;border-radius:4px;border:1px dashed var(--teal);background:transparent;color:var(--teal);font-size:9px;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap}
+.cf-fact-btn:hover{background:var(--teal-light)}
+.cf-fact-btn.has-actual{background:var(--teal-light);border-style:solid}
+
+/* CAPEX/OPEX BREAKDOWN */
+.cf-breakdown-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.cf-breakdown-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.cf-breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cf-breakdown-section{display:flex;flex-direction:column;gap:6px}
+.cf-breakdown-hd{font-size:11px;font-weight:700;color:var(--text2);padding-bottom:6px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.cf-breakdown-hd-total{font-family:var(--mono);font-size:12px;font-weight:700}
+.cf-breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px}
+.cf-breakdown-label{color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}
+.cf-breakdown-amount{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);white-space:nowrap}
+.cf-breakdown-bar{height:3px;background:var(--surface3);border-radius:2px;margin-top:2px;overflow:hidden}
+.cf-breakdown-bar-fill{height:100%;border-radius:2px}
+
+/* PROJECT REGISTRY */
+.reg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.reg-title{font-size:16px;font-weight:700;color:var(--text)}
+.reg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow-sm);overflow:hidden}
+.reg-card-hd{display:grid;grid-template-columns:140px 1fr 120px 100px 100px 36px;align-items:center;padding:12px 16px;cursor:pointer;gap:8px}
+.reg-card-hd:hover{background:var(--surface2)}
+.reg-pnum{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)}
+.reg-client{font-weight:600;font-size:13px}
+.reg-desc{font-size:12px;color:var(--text2)}
+.reg-status{display:flex;justify-content:center}
+.reg-count{font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center}
+.reg-body{display:none;border-top:1px solid var(--border);padding:16px;background:var(--surface2)}
+.reg-card.open .reg-body{display:block}
+.reg-card.open .reg-card-hd{background:var(--surface2)}
+.reg-aggr-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+.reg-aggr-table th{padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);background:var(--surface)}
+.reg-aggr-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.reg-aggr-table tr:last-child td{border-bottom:none}
+.reg-aggr-table input,.reg-aggr-table select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--font);font-size:12px;color:var(--text);outline:none;width:100%}
+.reg-aggr-table input:focus,.reg-aggr-table select:focus{border-color:var(--accent)}
+.reg-add-aggr{padding:5px 12px;border-radius:var(--radius-sm);background:transparent;border:1px dashed var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.reg-add-aggr:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.reg-save-btn{padding:6px 16px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;margin-left:8px}
+.reg-empty{text-align:center;padding:48px;color:var(--text3)}
+/* AI ADVISOR */
+.cf-advisor-card{background:linear-gradient(135deg,#EFF6FF,#F5F3FF);border:1px solid #BFDBFE;border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.cf-advisor-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.cf-advisor-body{display:flex;flex-direction:column;gap:8px}
+.cf-advisor-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:var(--radius-sm);border-left:3px solid transparent}
+.cf-advisor-item.danger{border-left-color:var(--red);background:rgba(254,242,242,0.8)}
+.cf-advisor-item.warn{border-left-color:var(--amber);background:rgba(255,251,235,0.8)}
+.cf-advisor-item.ok{border-left-color:var(--green);background:rgba(240,253,244,0.8)}
+.cf-advisor-item.info{border-left-color:var(--accent);background:rgba(239,246,255,0.8)}
+.cf-advisor-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.cf-advisor-text{font-size:12px;line-height:1.5;color:var(--text2)}
+.cf-advisor-text strong{color:var(--text);font-weight:600}
+.cf-advisor-loading{text-align:center;padding:20px;color:var(--text3);font-size:12px}
+/* LOADING */
+.loading{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.loading.hidden{opacity:0;pointer-events:none}
+.loading-logo{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+.loading-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.loading-bar{width:160px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.loading-bar-fill{height:100%;background:var(--accent);border-radius:2px;animation:lbar 1.4s ease infinite}
+@keyframes lbar{0%{width:0;margin-left:0}50%{width:80%;margin-left:0}100%{width:0;margin-left:100%}}
+@media print{header,.cf-controls,.cf-qadd,.cf-print-btn,.cf-add-btn,.toolbar{display:none!important}.cf-week{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">
+  <div class="loading-logo">AVRONIS · Deal Flow</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  <div class="loading-sub">Завантаження даних...</div>
+</div>
+<header>
+  <div class="logo"><div class="logo-dot"></div>AVRONIS</div>
+  <div class="hbadge">UAE OPS</div>
+  <div class="save-badge" id="saveBadge">Ініціалізація...</div>
+  <div class="ml"><button class="btn-primary" onclick="openDeal(null)">+ Нова угода</button></div>
+</header>
+<main>
+  <div class="setup-banner" id="setupBanner">
+    <div class="setup-banner-text">⚙ Підключіть Google Sheets для збереження</div>
+    <div class="setup-row">
+      <input id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec" type="url">
+      <button class="btn-connect" onclick="connectScript()">Підключити</button>
+      <button class="btn-local" onclick="useLocal()">Локально</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-lbl">Підтверджено</div><div class="kpi-val" id="kWon">$0</div><div class="kpi-aed" id="kWonA">AED 0</div><div class="kpi-sub" id="kWonC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--green)" id="kWonBar"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">Pipeline</div><div class="kpi-val" id="kPipe">$0</div><div class="kpi-aed" id="kPipeA">AED 0</div><div class="kpi-sub" id="kPipeC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent)" id="kPipeBar"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">На паузі</div><div class="kpi-val" id="kPause">$0</div><div class="kpi-aed" id="kPauseA">AED 0</div><div class="kpi-sub" id="kPauseC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--amber)" id="kPauseBar"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">Програно</div><div class="kpi-val" id="kLost">$0</div><div class="kpi-aed" id="kLostA">AED 0</div><div class="kpi-sub" id="kLostC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--red)" id="kLostBar"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">Зважений pipeline</div><div class="kpi-val" id="kW">$0</div><div class="kpi-aed" id="kWA">AED 0</div><div class="kpi-sub">з імовірністю</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent2)" id="kWBar"></div></div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" onclick="setFilter('all',this)">Всі</button>
+      <button class="tab" onclick="setFilter('new',this)">Нові</button>
+      <button class="tab" onclick="setFilter('contract',this)">Договір</button>
+      <button class="tab" onclick="setFilter('invoice',this)">Інвойс</button>
+      <button class="tab" onclick="setFilter('work',this)">В роботі</button>
+      <button class="tab" onclick="setFilter('pause',this)">Пауза</button>
+      <button class="tab" onclick="setFilter('won',this)">Виграно</button>
+      <button class="tab" onclick="setFilter('lost',this)">Програно</button>
+      <button class="tab" onclick="setFilter('archive',this)">Архів</button>
+      <button class="tab pay-tab" onclick="setFilter('payments',this)">💳 Платежі</button>
+      <button class="tab" onclick="setFilter('registry',this)">📋 Реєстр проектів</button>
+      <button class="tab cf-tab" onclick="setFilter('cashflow',this)">📊 Cash Flow</button>
+    </div>
+  </div>
+
+  <div id="mainView">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Замовник</th>
+          <th style="width:14%">Опис</th>
+          <th style="width:13%">Сума</th>
+          <th style="width:11%">Отримано</th>
+          <th style="width:12%">Статус</th>
+          <th style="width:10%">Імовірність</th>
+          <th style="width:9%">Дата</th>
+          <th style="width:5%"></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyState" style="display:none">
+        <div class="empty-ico">📋</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)">Угод не знайдено</div>
+        <div style="font-size:12px;margin-top:6px">Натисніть «+ Нова угода»</div>
+      </div>
+    </div>
+  </div>
+  <div id="archiveView" style="display:none"><div id="archiveList"></div></div>
+  <div id="paymentsView" style="display:none"><div id="paymentsContent"></div></div>
+  <div id="registryView" style="display:none"><div id="registryContent"></div></div>
+  <div id="cashflowView" style="display:none"><div id="cfContent"></div></div>
+</main>
+
+<!-- DEAL MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mh">
+      <div class="m-title" id="mTitle">Нова угода</div>
+      <div class="m-tabs">
+        <button class="mtab active" onclick="switchTab('info',this)">Основне</button>
+        <button class="mtab" onclick="switchTab('items',this)">Позиції</button>
+        <button class="mtab" onclick="switchTab('pay',this)">Оплата</button>
+      </div>
+      <button class="mclose" onclick="safeClose()">✕</button>
+    </div>
+    <div class="mb">
+      <div class="mpanel active" id="panel-info">
+        <div class="fg">
+          <div class="fc"><label>Замовник *</label><input id="fClient" placeholder="Назва або імя"></div>
+          <div class="fc"><label>Статус</label>
+            <select id="fStatus" onchange="onStatusChange()">
+              <option value="new">Нова пропозиція</option>
+              <option value="contract">Підготувати договір</option>
+              <option value="invoice">Виставити інвойс</option>
+              <option value="work">В роботі</option>
+              <option value="pause">На паузі</option>
+              <option value="won">Виграно</option>
+              <option value="lost">Програно</option>
+            </select>
+          </div>
+          <div class="fc"><label>Вид послуг</label>
+            <select id="fServiceType">
+              <option value="">— Оберіть —</option>
+              <option value="Капітальний ремонт">Капітальний ремонт</option>
+              <option value="Ремонт">Ремонт</option>
+              <option value="НТП">НТП</option>
+              <option value="Продаж">Продаж</option>
+            </select>
+          </div>
+          <div class="fc"><label>Валюта</label>
+            <div class="cur-toggle">
+              <button class="cur-btn active" id="curUSD" onclick="setCur('USD')">USD</button>
+              <button class="cur-btn" id="curAED" onclick="setCur('AED')">AED</button>
+            </div>
+          </div>
+          <div class="fc span2"><label>Опис</label><input id="fDesc" placeholder="напр. Ремонт КАУ-115АМ, 5 одиниць"></div>
+          <div class="fc">
+            <label id="fPriceLbl">Ціна, USD</label>
+            <input id="fPrice" type="number" placeholder="0" min="0" oninput="updatePricePreview()">
+            <div class="price-preview" id="pricePreview"></div>
+          </div>
+          <div class="fc"><label>Імовірність, %</label><input id="fProb" type="number" placeholder="50" min="0" max="100"></div>
+          <div class="fc"><label>Дата</label><input id="fDate" type="date"></div>
+          <div class="fc"><label>Контакт</label><input id="fContact" placeholder="Імя, телефон або email"></div>
+          <div class="fc span2"><label>Нотатки</label><textarea id="fNotes" placeholder="Умови, деталі..."></textarea></div>
+          <div class="fc span2" id="projectNumRow" style="display:none">
+            <label>Номер проекту</label>
+            <div class="pnum-row">
+              <input id="fProjectNum" readonly class="pnum-input">
+              <span id="projectNumStatus" class="pnum-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mpanel" id="panel-items">
+        <table class="items-tbl">
+          <thead><tr>
+            <th style="width:40%">Назва</th>
+            <th style="width:22%">Ціна за од.</th>
+            <th style="width:12%">К-ть</th>
+            <th style="width:20%">Сума</th>
+            <th style="width:6%"></th>
+          </tr></thead>
+          <tbody id="itemsTbody"></tbody>
+        </table>
+        <div class="items-footer">
+          <button class="btn-link" onclick="addItem()">+ Додати позицію</button>
+          <div class="items-total">Разом: <span id="itemsTotal">$0</span></div>
+        </div>
+        <!-- PAYMENT CALCULATOR -->
+        <div class="calc-box">
+          <div class="calc-box-title">💰 Калькулятор розподілу оплат</div>
+          <div class="calc-total-row">
+            <span class="calc-total-lbl">Загальна сума:</span>
+            <span class="calc-total-val" id="calcTotal">$0</span>
+          </div>
+          <div id="calcParts"></div>
+          <div class="calc-footer">
+            <button class="btn-link" onclick="addCalcPart()">+ Додати частину</button>
+            <span class="calc-remainder" id="calcRemainder"></span>
+          </div>
+          <button class="btn-calc-transfer" onclick="calcToPayments()">Перенести в Оплату →</button>
+        </div>
+      </div>
+      <div class="mpanel" id="panel-pay">
+        <div id="payList"></div>
+        <button class="btn-link" onclick="addPayment()">+ Додати платіж</button>
+        <div class="pay-summary" id="paySummary"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-cancel" onclick="safeClose()">Скасувати</button>
+      <button class="btn-save" onclick="saveDeal()">Зберегти угоду</button>
+    </div>
+  </div>
+</div>
+
+<!-- CF ADD MODAL -->
+<div class="cf-overlay" id="cfOverlay">
+  <div class="cf-modal">
+    <div class="cf-mh">
+      <div class="cf-mtitle">Нова транзакція</div>
+      <button class="mclose" onclick="closeCfModal()">✕</button>
+    </div>
+    <div class="cf-mb">
+      <div class="fg">
+        <div class="fc"><label>Дата</label><input type="date" id="cfDate"></div>
+        <div class="fc"><label>Група</label>
+          <select id="cfGroup">
+            <option value="OPEX">OPEX</option>
+            <option value="CAPEX">CAPEX</option>
+          </select>
+        </div>
+        <div class="fc"><label>Тип</label>
+          <select id="cfType" onchange="updateCfStatus()">
+            <option value="expense-opex">Витрата — OPEX</option>
+            <option value="expense-capex">Витрата — CAPEX</option>
+            <option value="debt">Борг постачальнику</option>
+            <option value="income">Надходження</option>
+          </select>
+        </div>
+        <div class="fc"><label>Статус</label>
+          <select id="cfStatus">
+            <option value="plan">📋 План</option>
+            <option value="topay">🔴 До оплати</option>
+            <option value="paid">✅ Оплачено</option>
+            <option value="confirmed">🟡 Підтверджено</option>
+            <option value="received">✅ Отримано</option>
+          </select>
+        </div>
+        <div class="fc span2"><label>Категорія</label>
+          <select id="cfCategory">
+            <option value="Salaries - Admin & Management">Salaries — Admin &amp; Management</option>
+            <option value="Direct labour/salary">Direct labour/salary</option>
+            <option value="Spare Parts for Repair">Spare Parts for Repair</option>
+            <option value="Spare parts stock">Spare parts stock</option>
+            <option value="Frequently replaced parts">Frequently replaced parts</option>
+            <option value="Materials - Maintenance (TO)">Materials — Maintenance (TO)</option>
+            <option value="Material for warehouse">Material for warehouse</option>
+            <option value="Rent">Rent</option>
+            <option value="Facility maintenance">Facility maintenance</option>
+            <option value="Workshop electricity">Workshop electricity</option>
+            <option value="Tools & Equipment">Tools &amp; Equipment</option>
+            <option value="Certification & Compliance">Certification &amp; Compliance</option>
+            <option value="Authority Fees">Authority Fees</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Outsourced accounting / admin">Outsourced accounting / admin</option>
+            <option value="Subcontracted Services - Overhaul">Subcontracted Services — Overhaul</option>
+            <option value="Direct labour/ Inbound logistics - components">Direct labour / Inbound logistics</option>
+            <option value="Direct labour/Packaging & handling">Direct labour / Packaging &amp; handling</option>
+            <option value="Fuel & Transportation">Fuel &amp; Transportation</option>
+            <option value="Travel & Accommodation">Travel &amp; Accommodation</option>
+            <option value="Internet & communications">Internet &amp; communications</option>
+            <option value="Office Expenses">Office Expenses</option>
+            <option value="Bank Charges">Bank Charges</option>
+            <option value="Business Entertainment">Business Entertainment</option>
+            <option value="Construction">Construction</option>
+            <option value="Production Furniture">Production Furniture</option>
+            <option value="Office Furniture">Office Furniture</option>
+            <option value="Sales - Repair Services">Sales — Repair Services</option>
+            <option value="Other">Інше</option>
+          </select>
+        </div>
+        <div class="fc span2"><label>Опис</label><input id="cfDesc" placeholder="напр. Зарплата травень, КАУ-115АМ..."></div>
+        <div class="fc"><label>Валюта</label>
+          <div class="cur-toggle">
+            <button class="cur-btn" id="cfCurUSD" onclick="setCfCur('USD')">USD</button>
+            <button class="cur-btn active" id="cfCurAED" onclick="setCfCur('AED')">AED</button>
+          </div>
+        </div>
+        <div class="fc"><label>Планова сума</label><input type="number" id="cfAmount" placeholder="0" min="0"></div>
+        <div class="fc"><label>Фактична сума</label><input type="number" id="cfActual" placeholder="0 (якщо відрізняється)"></div>
+        <div class="fc span2"><label>Коментар</label><input id="cfNote" placeholder="необовязково"></div>
+        <div class="fc span2" style="flex-direction:row;align-items:center;gap:10px;padding:8px;background:var(--red-light);border-radius:var(--radius-sm);border:1px solid #FECACA">
+          <input type="checkbox" id="cfCritical" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)">
+          <label for="cfCritical" style="font-size:12px;font-weight:600;color:var(--red);cursor:pointer;text-transform:none;letter-spacing:0">🚨 Критичний платіж (не можна переносити)</label>
+        </div>
+      </div>
+    </div>
+    <div class="cf-mf">
+      <button class="btn-cancel" onclick="closeCfModal()">Скасувати</button>
+      <button class="cf-save-btn" onclick="saveCfTx()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var PROBS={new:30,contract:60,invoice:75,work:100,pause:40,won:100,lost:0};
+var LABELS={new:'Нова',contract:'Договір',invoice:'Інвойс',work:'В роботі',pause:'Пауза',won:'Виграно',lost:'Програно'};
+var LSKEY='crm_uae_v3';
+var CFKEY='avronis_cf_v1';
+var URLKEY='crm_script_url';
+var FX=3.67;
+var HARDCODED_URL='https://script.google.com/macros/s/AKfycby1R0rlEjt6XEYhzGLQ_LrEBPBHIE-CcaS6mf9SVIoNZtT2UdhXhv5coq69_DI3NiXQyA/exec';
+
+var deals=[];
+var cfTxs=[];
+var bankAED=null;
+var editId=null,editItems=[],editPayments=[],calcParts=[];
+var editCur='USD';
+var cfCur='AED';
+var filter='all';
+var scriptUrl=localStorage.getItem(URLKEY)||'';
+var cfMonth='all';
+var cfEditId=null;
+var minSafeBalance=localStorage.getItem("cf_min_safe")?parseFloat(localStorage.getItem("cf_min_safe")):50000;
+
+function init(){
+  if(HARDCODED_URL&&HARDCODED_URL.indexOf('script.google.com')>-1){scriptUrl=HARDCODED_URL;localStorage.setItem(URLKEY,HARDCODED_URL);}
+  loadCfLocal();
+  if(scriptUrl){document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
+  else{setBadge('Не підключено','err');deals=[];render();hide();}
+}
+function hide(){document.getElementById('loading').classList.add('hidden');}
+function setBadge(t,c){var b=document.getElementById('saveBadge');b.textContent=t;b.className='save-badge '+c;}
+function loadCfLocal(){
+  try{var d=localStorage.getItem(CFKEY);if(d)cfTxs=JSON.parse(d);}catch(e){cfTxs=[];}
+  var saved=localStorage.getItem('cf_bank_aed');
+  if(saved!==null&&!isNaN(parseFloat(saved)))bankAED=parseFloat(saved);
+}
+function saveCfLocal(){localStorage.setItem(CFKEY,JSON.stringify(cfTxs));}
+function toUSD(amt,cur){return cur==='AED'?amt/FX:amt;}
+function fmtUSD(n){return '$'+Math.round(Math.abs(n||0)).toLocaleString('en-US');}
+function fmtAED(n){return 'AED '+Math.round(Math.abs(n||0)).toLocaleString('en-US');}
+function fmtCur(amt,cur){return cur==='AED'?fmtAED(amt):fmtUSD(amt);}
+function dealTotalUSD(d){var raw=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;return toUSD(raw,d.currency||'USD');}
+function dealPaidUSD(d){var raw=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);return toUSD(raw,d.currency||'USD');}
+
+function loadFromSheets(){
+  setBadge('Завантаження...','saving');
+  fetch(scriptUrl+'?action=load&t='+Date.now()).then(function(r){return r.text();}).then(function(text){
+    var parsed;try{parsed=JSON.parse(text);}catch(e){parsed={};}
+    if(Array.isArray(parsed))deals=parsed;
+    else if(parsed.deals&&Array.isArray(parsed.deals))deals=parsed.deals;
+    else deals=[];
+    deals=deals.filter(function(d){return d&&typeof d==='object'&&d.client;});
+    // ЗАХИСТ: якщо Sheets повернув порожній масив але локально є дані - не перезаписувати
+    if(deals.length===0){
+      var localBackup=localStorage.getItem(LSKEY);
+      try{
+        var localDeals=localBackup?JSON.parse(localBackup).filter(function(d){return d&&d.client;}):[];
+        if(localDeals.length>0){
+          deals=localDeals;
+          setBadge('Локальний кеш (Sheets порожній)','saving');
+          // Відновити в Sheets
+          fetch(scriptUrl+'?action=save&data='+encodeURIComponent(JSON.stringify(deals))).then(function(){setBadge('Відновлено в Google','ok');});
+        }
+      }catch(e){}
+    }
+    if(parsed.bank_aed!==undefined){bankAED=parseFloat(parsed.bank_aed)||null;if(bankAED)localStorage.setItem('cf_bank_aed',String(bankAED));}
+    setBadge('Збережено в Google','ok');localStorage.setItem(LSKEY,JSON.stringify(deals));render();
+  }).catch(function(){
+    setBadge('Локально (офлайн)','err');
+    var local=localStorage.getItem(LSKEY);
+    try{deals=local?JSON.parse(local).filter(function(d){return d&&d.client;}):[]; }catch(e){deals=[];}
+    render();
+  }).finally(function(){hide();});
+}
+function persist(){
+  setBadge('Збереження...','saving');localStorage.setItem(LSKEY,JSON.stringify(deals));
+  if(!scriptUrl){setBadge('Локально','err');return;}
+  fetch(scriptUrl+'?action=save&data='+encodeURIComponent(JSON.stringify(deals))).then(function(r){return r.json();}).then(function(d){if(d.status==='ok')setBadge('Збережено в Google','ok');else setBadge('Помилка збереження','err');}).catch(function(){setBadge('Локально (офлайн)','err');});
+}
+function connectScript(){var url=document.getElementById('scriptUrl').value.trim();if(url.indexOf('script.google.com')<0){alert('Невірний URL');return;}scriptUrl=url;localStorage.setItem(URLKEY,url);document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
+function useLocal(){document.getElementById('setupBanner').classList.add('hidden');var local=localStorage.getItem(LSKEY);try{deals=local?JSON.parse(local).filter(function(d){return d&&d.client;}):[]; }catch(e){deals=[];}setBadge('Локально','err');render();hide();}
+
+// Якщо URL скрипту є — одразу підключаємо без банера
+function checkAndConnect(){
+  var saved=localStorage.getItem(URLKEY);
+  if(saved&&saved.indexOf('script.google.com')>-1){
+    scriptUrl=saved;
+    document.getElementById('setupBanner').classList.add('hidden');
+    document.getElementById('scriptUrl').value=saved;
+  }
+}
+
+function updateKPIs(){
+  var confirmed=deals.filter(function(d){return ['won','work','contract','invoice'].indexOf(d.status)>-1;});
+  var lost=deals.filter(function(d){return d.status==='lost';});
+  var pause=deals.filter(function(d){return d.status==='pause';});
+  var pipe=deals.filter(function(d){return d.status==='new';});
+  function sUSD(arr){return arr.reduce(function(a,d){return a+dealTotalUSD(d);},0);}
+  var weighted=deals.filter(function(d){return ['lost','pause'].indexOf(d.status)<0;}).reduce(function(a,d){return a+dealTotalUSD(d)*(Number(d.prob)||0)/100;},0);
+  var allUSD=sUSD(deals.filter(function(d){return d.status!=='lost';}));
+  var sets=[[confirmed,'kWon','kWonA','kWonC','kWonBar'],[pipe,'kPipe','kPipeA','kPipeC','kPipeBar'],[pause,'kPause','kPauseA','kPauseC','kPauseBar'],[lost,'kLost','kLostA','kLostC','kLostBar']];
+  sets.forEach(function(s){
+    var u=sUSD(s[0]);
+    document.getElementById(s[1]).textContent=fmtUSD(u);
+    document.getElementById(s[2]).textContent=fmtAED(u*FX);
+    document.getElementById(s[3]).textContent=s[0].length+' угод';
+    var bar=document.getElementById(s[4]);
+    if(bar&&allUSD>0)bar.style.width=Math.min(100,u/allUSD*100)+'%';
+  });
+  document.getElementById('kW').textContent=fmtUSD(weighted);
+  document.getElementById('kWA').textContent=fmtAED(weighted*FX);
+}
+
+function render(){
+  updateKPIs();
+  var isArch=filter==='archive';var isCF=filter==='cashflow';var isPay=filter==='payments';var isReg=filter==='registry';
+  document.getElementById('mainView').style.display=(isArch||isCF||isPay||isReg)?'none':'block';
+  document.getElementById('archiveView').style.display=isArch?'block':'none';
+  document.getElementById('paymentsView').style.display=isPay?'block':'none';
+  document.getElementById('registryView').style.display=isReg?'block':'none';
+  document.getElementById('cashflowView').style.display=isCF?'block':'none';
+  if(isArch){renderArchive();return;}
+  if(isPay){renderPayments();return;}
+  if(filter==='registry'){renderRegistry();return;}
+  if(isCF){renderCF();return;}
+  var list=filter==='all'?deals:deals.filter(function(d){return d.status===filter;});
+  var tbody=document.getElementById('tbody');var empty=document.getElementById('emptyState');
+  if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=list.map(function(d){
+    var totalUSD=dealTotalUSD(d);var paidUSD=dealPaidUSD(d);var cur=d.currency||'USD';
+    var rawTotal=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;
+    var rawPaid=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+    var pn=d.projectNum?('<span class="pnum">'+d.projectNum+'</span>'):'';
+    // Payment distribution indicator for active deals
+    var payIndicator='';
+    var activeStatuses=['contract','invoice','work'];
+    if(activeStatuses.indexOf(d.status)>-1){
+      var dealTotal_=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;
+      var payTotal_=(d.payments||[]).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+      if(dealTotal_>0){
+        var pct_=Math.min(100,Math.round(payTotal_/dealTotal_*100));
+        var missing_=dealTotal_-payTotal_;
+        var barColor_=pct_>=100?'var(--green)':pct_>50?'var(--amber)':'var(--red)';
+        var missingHtml_=missing_>0?'<span class="deal-pay-missing">-'+fmtCur(missing_,d.currency||"USD")+'</span>':'<span style="font-size:10px;color:var(--green)">✓</span>';
+        payIndicator='<div class="deal-pay-indicator">'
+          +'<div class="deal-pay-bar-wrap"><div class="deal-pay-bar-fill" style="width:'+pct_+'%;background:'+barColor_+'"></div></div>'
+          +'<span class="deal-pay-pct" style="color:'+barColor_+'">'+pct_+'%</span>'
+          +missingHtml_
+          +'</div>';
+      }
+    }
+    var notes=d.notes?('<div class="td-dim">'+esc(d.notes.substring(0,50))+(d.notes.length>50?'...':'')+'</div>'):'';
+    var svc=d.serviceType?('<span style="color:var(--accent2);font-size:11px;font-weight:600">'+esc(d.serviceType)+'</span>'+(d.desc?' · '+esc(d.desc):'')):(esc(d.desc)||'—');
+    var aedRow=cur==='AED'?('<span class="td-aed">~'+fmtUSD(totalUSD)+'</span>'):('<span class="td-aed">'+fmtAED(totalUSD*FX)+'</span>');
+    var paidRow=rawPaid>0?(fmtCur(rawPaid,cur)+(cur==='AED'?'<span class="td-aed">~'+fmtUSD(paidUSD)+'</span>':'')):'—';
+    return '<tr>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer"><div class="td-name">'+esc(d.client)+pn+'</div>'+notes+payIndicator+'</td>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer;color:var(--text2);font-size:12px">'+svc+'</td>'
+      +'<td class="td-mono" onclick="openDeal('+d.id+')" style="cursor:pointer">'+fmtCur(rawTotal,cur)+aedRow+'</td>'
+      +'<td class="td-mono" onclick="openDeal('+d.id+')" style="cursor:pointer;color:'+(rawPaid>0?'var(--green)':'var(--text3)')+'">'+paidRow+'</td>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer"><span class="badge '+d.status+'">'+LABELS[d.status]+'</span></td>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer"><div class="prob-row"><div class="prob-bar"><div class="prob-fill" style="width:'+(d.prob||0)+'%;background:'+probColor(d.prob||0)+'"></div></div><span class="td-mono" style="font-size:11px;color:'+probColor(d.prob||0)+'">'+(d.prob||0)+'%</span></div></td>'
+      +'<td onclick="openDeal('+d.id+')" style="cursor:pointer;color:var(--text3);font-size:12px">'+(d.date?new Date(d.date+'T00:00:00').toLocaleDateString('uk-UA'):'—')+'</td>'
+      +'<td><div class="td-acts"><button class="ibtn edit" onclick="event.stopPropagation();openDeal('+d.id+')">✎</button><button class="ibtn del" onclick="event.stopPropagation();delDeal('+d.id+')">✕</button></div></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function renderArchive(){
+  var won=deals.filter(function(d){return d.status==='won';});
+  var el=document.getElementById('archiveList');
+  if(!won.length){el.innerHTML='<div class="empty"><div class="empty-ico">📁</div><div style="font-weight:600">Архів порожній</div></div>';return;}
+  el.innerHTML=won.map(function(d){
+    var cur=d.currency||'USD';
+    var rawTotal=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;
+    var rawPaid=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+    var pays=(d.payments||[]).map(function(p){return '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)"><span>'+esc(p.label||'Платіж')+'</span><span style="font-family:var(--mono);color:'+(p.paid?'var(--green)':'var(--amber)')+'">'+fmtCur(p.amount,cur)+' '+(p.paid?'✓':'очікується')+'</span></div>';}).join('');
+    return '<div class="arch-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="badge won">Виграно</span><span style="font-weight:600;font-size:14px">'+esc(d.client)+'</span>'+(d.projectNum?'<span class="pnum">'+d.projectNum+'</span>':'')+(d.desc?'<span style="font-size:12px;color:var(--text3)">· '+esc(d.desc)+'</span>':'')+'</div>'+(pays?'<div>'+pays+'</div>':'')+'<div style="text-align:right;font-size:14px;font-weight:700;color:var(--green);margin-top:10px">'+fmtCur(rawTotal,cur)+' · Отримано: '+fmtCur(rawPaid,cur)+'</div></div>';
+  }).join('');
+}
+
+/* PAYMENTS TAB */
+function renderPayments(){
+  var el=document.getElementById('paymentsContent');
+  var payments=[];
+  deals.forEach(function(d){
+    if(d.status==='lost')return;
+    (d.payments||[]).forEach(function(p){
+      if(!p.amount)return;
+      payments.push({date:p.date||'',amount:Number(p.amount)||0,label:p.label||'Платіж',paid:p.paid||false,client:d.client,dealId:d.id,status:d.status,projectNum:d.projectNum||'',currency:d.currency||'USD'});
+    });
+  });
+  var totalAll=payments.reduce(function(a,p){return a+toUSD(p.amount,p.currency);},0);
+  var totalRecv=payments.filter(function(p){return p.paid;}).reduce(function(a,p){return a+toUSD(p.amount,p.currency);},0);
+  var totalPend=totalAll-totalRecv;
+  var months={};
+  payments.forEach(function(p){
+    var key=p.date?p.date.substring(0,7):'no-date';
+    if(!months[key])months[key]={key:key,label:'',items:[],total:0,received:0};
+    if(p.date){var dd=new Date(p.date+'T00:00:00');months[key].label=dd.toLocaleDateString('uk',{month:'long',year:'numeric'});}
+    else months[key].label='Без дати';
+    months[key].items.push(p);
+    months[key].total+=toUSD(p.amount,p.currency);
+    if(p.paid)months[key].received+=toUSD(p.amount,p.currency);
+  });
+  var sorted=Object.values(months).sort(function(a,b){return a.key.localeCompare(b.key);});
+  var html='<div class="pay-summary-bar">'
+    +'<div class="pay-sum-card"><div class="pay-sum-lbl">Всього очікується</div><div class="pay-sum-val">'+fmtUSD(totalAll)+'</div><div class="pay-sum-sub">'+fmtAED(totalAll*FX)+'</div></div>'
+    +'<div class="pay-sum-card"><div class="pay-sum-lbl">Вже отримано</div><div class="pay-sum-val" style="color:var(--green)">'+fmtUSD(totalRecv)+'</div><div class="pay-sum-sub">'+fmtAED(totalRecv*FX)+'</div></div>'
+    +'<div class="pay-sum-card"><div class="pay-sum-lbl">Ще очікується</div><div class="pay-sum-val" style="color:var(--amber)">'+fmtUSD(totalPend)+'</div><div class="pay-sum-sub">'+fmtAED(totalPend*FX)+'</div></div>'
+    +'</div>';
+  sorted.forEach(function(m){
+    var pct=m.total>0?Math.round(m.received/m.total*100):0;
+    html+='<div class="pay-month-section"><div class="pay-month-hd"><div><div class="pay-month-lbl" style="text-transform:capitalize">'+m.label+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+m.items.length+' платежів</div></div><div style="text-align:right"><div class="pay-month-total">'+fmtUSD(m.total)+'</div>'+(m.received>0?'<div class="pay-month-recv">✓ Отримано: '+fmtUSD(m.received)+'</div>':'')+'</div></div>';
+    m.items.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(p){
+      html+='<div class="pay-row" onclick="goToDeal('+p.dealId+')">'
+        +'<div><div class="pay-row-client">'+esc(p.client)+(p.projectNum?'<span class="pnum">'+p.projectNum+'</span>':'')+'</div></div>'
+        +'<div class="pay-row-desc">'+esc(p.label)+'</div>'
+        +'<div class="pay-row-amt" style="color:'+(p.paid?'var(--green)':'var(--text)')+'">'+fmtCur(p.amount,p.currency)+'</div>'
+        +'<div class="pay-row-date">'+(p.date?new Date(p.date+'T00:00:00').toLocaleDateString('uk-UA'):'—')+'</div>'
+        +'<div><span class="pay-status-pill '+(p.paid?'pill-recv':'pill-pend')+'">'+(p.paid?'✓ Отримано':'Очікується')+'</span></div>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+  if(!payments.length)html='<div class="empty"><div class="empty-ico">💳</div><div style="font-weight:600">Платежів ще немає</div><div style="margin-top:6px">Додайте платежі в угодах на вкладці «Оплата»</div></div>';
+  el.innerHTML=html;
+}
+
+function probColor(p){return p>=75?'var(--green)':p>=50?'var(--amber)':p>=25?'#F97316':'var(--red)';}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');render();}
+function goToDeal(id){filter='all';document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});document.querySelector('.tab').classList.add('active');render();setTimeout(function(){openDeal(id);},100);}
+
+/* DEAL MODAL */
+function setCur(c){editCur=c;document.getElementById('curUSD').classList.toggle('active',c==='USD');document.getElementById('curAED').classList.toggle('active',c==='AED');document.getElementById('fPriceLbl').textContent='Ціна, '+c;updatePricePreview();}
+function updatePricePreview(){var val=parseFloat(document.getElementById('fPrice').value)||0;var el=document.getElementById('pricePreview');if(!val){el.textContent='';return;}el.textContent=editCur==='USD'?('≈ '+fmtAED(val*FX)):('≈ '+fmtUSD(val/FX));}
+function openDeal(id){
+  editId=id;var d=id?deals.find(function(x){return x.id===id;}):null;
+  document.getElementById('mTitle').textContent=id?'Редагувати угоду':'Нова угода';
+  document.getElementById('fClient').value=d&&d.client?d.client:'';
+  document.getElementById('fStatus').value=d&&d.status?d.status:'new';
+  document.getElementById('fServiceType').value=d&&d.serviceType?d.serviceType:'';
+  document.getElementById('fDesc').value=d&&d.desc?d.desc:'';
+  document.getElementById('fPrice').value=d&&d.price?d.price:'';
+  document.getElementById('fProb').value=d&&d.prob!==undefined?d.prob:PROBS['new'];
+  document.getElementById('fDate').value=d&&d.date?d.date:new Date().toISOString().slice(0,10);
+  document.getElementById('fContact').value=d&&d.contact?d.contact:'';
+  document.getElementById('fNotes').value=d&&d.notes?d.notes:'';
+  document.getElementById('fProjectNum').value=d&&d.projectNum?d.projectNum:'';
+  document.getElementById('fStatus').dataset.prev=d&&d.status?d.status:'';
+  setCur(d&&d.currency?d.currency:'USD');updatePricePreview();
+  var prow=document.getElementById('projectNumRow');var plbl=document.getElementById('projectNumStatus');var pn=d&&d.projectNum?d.projectNum:'';
+  if(pn){prow.style.display='';var s=d&&d.status?d.status:'';if(s==='work'||s==='won'||s==='invoice'){plbl.textContent='✓ Підтверджено';plbl.style.color='var(--green)';}else if(s==='contract'){plbl.textContent='⏳ Резерв';plbl.style.color='var(--amber)';}}else{prow.style.display='none';}
+  calcParts=[];
+  editItems=JSON.parse(JSON.stringify(d&&d.items?d.items:[]));
+  editPayments=JSON.parse(JSON.stringify(d&&d.payments?d.payments:[]));
+  switchTab('info',document.querySelector('.mtab'));renderItems();renderPayments_modal();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+document.getElementById('overlay').addEventListener('click',function(e){if(e.target===document.getElementById('overlay'))safeClose();});
+function safeClose(){var client=document.getElementById('fClient').value.trim();if(client&&!confirm('Закрити без збереження?'))return;closeModal();}
+function switchTab(name,btn){
+  document.querySelectorAll('.mtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');
+  document.querySelectorAll('.mpanel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='items')refreshCalc();
+}
+function onStatusChange(){var status=document.getElementById('fStatus').value;document.getElementById('fProb').value=PROBS[status]||50;updateProjectNumField(status);}
+function updateProjectNumField(status){
+  var row=document.getElementById('projectNumRow');var input=document.getElementById('fProjectNum');var lbl=document.getElementById('projectNumStatus');var cur=input.value;
+  if(status==='contract'){row.style.display='';if(!cur)input.value=generateProjectNum();lbl.textContent='⏳ Резерв';lbl.style.color='var(--amber)';}
+  else if(status==='work'||status==='won'||status==='invoice'){
+    if(cur){row.style.display='';lbl.textContent='✓ Підтверджено';lbl.style.color='var(--green)';}
+    else if(status==='work'){row.style.display='';input.value=generateProjectNum();lbl.textContent='✓ Підтверджено';lbl.style.color='var(--green)';}
+    else row.style.display='none';
+  } else {if(cur&&document.getElementById('fStatus').dataset.prev==='contract')input.value='';row.style.display='none';}
+  document.getElementById('fStatus').dataset.prev=status;
+}
+function generateProjectNum(){
+  var now=new Date();var yy=String(now.getFullYear()).slice(2);var mm=String(now.getMonth()+1).padStart(2,'0');
+  var prefix='AVR'+yy+mm;
+  // Collect ALL used numbers across ALL months to avoid any duplicates
+  var usedNums={};
+  deals.forEach(function(d){
+    if(d.id===editId) return; // skip current deal being edited
+    if(d.projectNum){
+      usedNums[d.projectNum]=true;
+    }
+  });
+  // Also check project registry
+  try{
+    var reg=JSON.parse(localStorage.getItem('avronis_projects')||'[]');
+    reg.forEach(function(p){if(p.projectNum)usedNums[p.projectNum]=true;});
+  }catch(e){}
+  // Find next available number for this month prefix
+  var n=1;
+  while(usedNums[prefix+String(n).padStart(3,'0')]){n++;}
+  return prefix+String(n).padStart(3,'0');
+}
+
+/* ITEMS */
+function renderItems(){
+  document.getElementById('itemsTbody').innerHTML=editItems.map(function(it,i){
+    return '<tr><td><input value="'+esc(it.name||'')+'" oninput="updItemName('+i+',this.value)" placeholder="Назва позиції"></td>'
+      +'<td><input type="number" value="'+(it.unitPrice||'')+'" oninput="updItemNum('+i+",'unitPrice'"+ ',this.value)" placeholder="0"></td>'
+      +'<td><input type="number" value="'+(it.qty||1)+'" oninput="updItemNum('+i+",'qty'"+ ',this.value)" placeholder="1"></td>'
+      +'<td class="item-sum" id="isum-'+i+'">'+fmtCur(it.total||0,editCur)+'</td>'
+      +'<td><button class="ibtn del" onclick="removeItem('+i+')">✕</button></td></tr>';
+  }).join('');
+  refreshItemsTotal();
+}
+function refreshItemsTotal(){
+  var total=editItems.reduce(function(a,it){return a+(it.total||0);},0);
+  document.getElementById('itemsTotal').textContent=fmtCur(total,editCur);
+  if(total>0)document.getElementById('fPrice').value=total;
+  refreshCalc();
+}
+function updItemName(i,v){editItems[i].name=v;}
+function updItemNum(i,f,v){editItems[i][f]=Number(v)||0;editItems[i].total=(editItems[i].unitPrice||0)*(editItems[i].qty||1);var cell=document.getElementById('isum-'+i);if(cell)cell.textContent=fmtCur(editItems[i].total||0,editCur);refreshItemsTotal();}
+function addItem(){editItems.push({name:'',unitPrice:0,qty:1,total:0});renderItems();}
+function removeItem(i){editItems.splice(i,1);renderItems();}
+
+/* CALC */
+function refreshCalc(){
+  var total=editItems.reduce(function(a,it){return a+(it.total||0);},0)||Number(document.getElementById('fPrice').value)||0;
+  document.getElementById('calcTotal').textContent=fmtCur(total,editCur);
+  var container=document.getElementById('calcParts');
+
+  // Build item options for select
+  var itemOpts='<option value="total"">Загальна сума</option>';
+  editItems.forEach(function(it,ii){
+    if(it.name) itemOpts+='<option value="item_'+ii+'">'+esc(it.name)+' ('+fmtCur(it.unitPrice||0,editCur)+'/од)</option>';
+  });
+
+  container.innerHTML=calcParts.map(function(p,i){
+    // Determine base amount
+    var baseAmt=total;
+    var unitPrice=0;
+    if(p.base&&p.base.startsWith('item_')){
+      var ii=parseInt(p.base.replace('item_',''));
+      if(editItems[ii]){baseAmt=editItems[ii].total||0;unitPrice=editItems[ii].unitPrice||0;}
+    }
+    // Calculate amount: if qty set, use qty*unitPrice*pct/100, else pct of base
+    var qty=p.qty||0;
+    var amt=0;
+    if(qty>0&&unitPrice>0){
+      amt=Math.round(qty*unitPrice*(p.pct||100)/100);
+    } else {
+      amt=p.pct?Math.round(baseAmt*p.pct/100):p.amt||0;
+    }
+
+    var opts=itemOpts.replace('value="total"">','value="total"'+((!p.base||p.base==='total')?' selected':'')+'>');
+    editItems.forEach(function(it,ii){
+      opts=opts.replace('value="item_'+ii+'"',p.base==='item_'+ii?'value="item_'+ii+'" selected':'value="item_'+ii+'"');
+    });
+
+    return '<div class="calc-part-row">'
+      +'<input class="calc-part-input" value="'+esc(p.name||'')+'" oninput="updCalcName('+i+',this.value)" placeholder="напр. Передоплата 2 од.">'
+      +'<select class="calc-part-input" onchange="updCalcBase('+i+',this.value)" style="font-size:11px">'+opts+'</select>'
+      +'<input type="number" class="calc-part-input" value="'+(p.qty||'')+'" oninput="updCalcQty('+i+',this.value)" placeholder="К-ть" min="0" title="Кількість одиниць (якщо часткова відвантаження)">'
+      +'<div class="calc-part-pct"><input type="number" class="calc-part-input" value="'+(p.pct||'')+'" oninput="updCalcPct('+i+',this.value)" placeholder="%" min="0" max="100"><span>%</span></div>'
+      +'<div class="calc-part-amt" id="camt-'+i+'">'+fmtCur(amt,editCur)+'</div>'
+      +'<button class="ibtn del" onclick="removeCalcPart('+i+')">✕</button>'
+      +'</div>';
+  }).join('');
+
+  // Calculate remainder
+  var used=calcParts.reduce(function(a,p){
+    var baseAmt=total;var unitPrice=0;
+    if(p.base&&p.base.startsWith('item_')){var ii=parseInt(p.base.replace('item_',''));if(editItems[ii]){baseAmt=editItems[ii].total||0;unitPrice=editItems[ii].unitPrice||0;}}
+    var qty=p.qty||0;var amt=0;
+    if(qty>0&&unitPrice>0){amt=Math.round(qty*unitPrice*(p.pct||100)/100);}
+    else{amt=p.pct?Math.round(baseAmt*p.pct/100):p.amt||0;}
+    return a+amt;
+  },0);
+  var rem=total-used;
+  var remEl=document.getElementById('calcRemainder');
+  if(remEl&&calcParts.length>0){
+    remEl.textContent=rem===0?'✓ Розподілено повністю':rem>0?'Залишок: '+fmtCur(rem,editCur):'Перевищення: '+fmtCur(Math.abs(rem),editCur);
+    remEl.style.color=rem===0?'var(--green)':rem>0?'var(--amber)':'var(--red)';
+  } else if(remEl) remEl.textContent='';
+}
+function addCalcPart(){
+  var total=editItems.reduce(function(a,it){return a+(it.total||0);},0)||Number(document.getElementById('fPrice').value)||0;
+  var usedPct=calcParts.reduce(function(a,p){return a+(Number(p.pct)||0);},0);
+  calcParts.push({name:calcParts.length===0?'Передоплата':'Постоплата '+(calcParts.length),pct:Math.max(0,100-usedPct),amt:0,base:'total'});
+  refreshCalc();
+}
+function removeCalcPart(i){calcParts.splice(i,1);refreshCalc();}
+function updCalcName(i,v){calcParts[i].name=v;}
+function updCalcPct(i,v){calcParts[i].pct=Number(v)||0;calcParts[i].amt=0;refreshCalc();}
+function updCalcBase(i,v){calcParts[i].base=v;refreshCalc();}
+function updCalcQty(i,v){calcParts[i].qty=Number(v)||0;refreshCalc();}
+function calcToPayments(){
+  var total=editItems.reduce(function(a,it){return a+(it.total||0);},0)||Number(document.getElementById('fPrice').value)||0;
+  if(!calcParts.length){alert('Спочатку додайте частини оплати');return;}
+  var newPays=calcParts.map(function(p){
+    var baseAmt=total;var unitPrice=0;
+    if(p.base&&p.base.startsWith('item_')){var ii=parseInt(p.base.replace('item_',''));if(editItems[ii]){baseAmt=editItems[ii].total||0;unitPrice=editItems[ii].unitPrice||0;}}
+    var qty=p.qty||0;var amt=0;
+    if(qty>0&&unitPrice>0){amt=Math.round(qty*unitPrice*(p.pct||100)/100);}
+    else{amt=p.pct?Math.round(baseAmt*p.pct/100):p.amt||0;}
+    var lbl=(p.name||'Платіж')+(qty>0?' ('+qty+' од.)':'');
+    return{label:lbl,amount:amt,date:'',paid:false};
+  });
+  if(editPayments.length>0&&!confirm('Замінити існуючі платежі?'))return;
+  editPayments=newPays;renderPayments_modal();
+  document.querySelectorAll('.mtab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.mtab')[2].classList.add('active');
+  document.querySelectorAll('.mpanel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-pay').classList.add('active');
+}
+
+/* PAYMENTS MODAL */
+function renderPayments_modal(){
+  var cur=editCur;
+  document.getElementById('payList').innerHTML=editPayments.map(function(p,i){
+    return '<div class="pay-item">'
+      +'<div class="fc"><label>Назва</label><input value="'+esc(p.label||'')+'" oninput="updPayLabel('+i+',this.value)" placeholder="Передоплата 50%"></div>'
+      +'<div class="fc"><label>Сума, '+cur+'</label><input type="number" value="'+(p.amount||'')+'" oninput="updPayNum('+i+',this.value)" placeholder="0"></div>'
+      +'<div class="fc"><label>Дата</label><input type="date" value="'+(p.date||'')+'" oninput="updPayDate('+i+',this.value)"></div>'
+      +'<div class="fc"><label>Статус</label><button class="pay-toggle '+(p.paid?'paid':'pending')+'" onclick="togglePaid('+i+')">'+(p.paid?'✓ Отримано':'Очікується')+'</button></div>'
+      +'<div class="fc"><label>&nbsp;</label><button class="ibtn del" onclick="removePay('+i+')">✕</button></div>'
+      +'</div>';
+  }).join('');
+  var planned=editPayments.reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+  var received=editPayments.filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);
+  document.getElementById('paySummary').innerHTML='<span>Заплановано: <strong>'+fmtCur(planned,cur)+'</strong></span><span>Отримано: <strong style="color:var(--green)">'+fmtCur(received,cur)+'</strong></span><span>Залишок: <strong>'+fmtCur(planned-received,cur)+'</strong></span>';
+}
+function updPayLabel(i,v){editPayments[i].label=v;}
+function updPayNum(i,v){editPayments[i].amount=Number(v)||0;renderPayments_modal();}
+function updPayDate(i,v){editPayments[i].date=v;}
+function togglePaid(i){editPayments[i].paid=!editPayments[i].paid;renderPayments_modal();}
+function addPayment(){var total=editItems.reduce(function(a,it){return a+(it.total||0);},0)||Number(document.getElementById('fPrice').value)||0;editPayments.push({label:'',amount:Math.round(total/2)||0,date:'',paid:false});renderPayments_modal();}
+function removePay(i){editPayments.splice(i,1);renderPayments_modal();}
+function saveDeal(){
+  var client=document.getElementById('fClient').value.trim();if(!client){document.getElementById('fClient').focus();return;}
+  var itemsTotal=editItems.reduce(function(a,it){return a+(it.total||0);},0);
+  var d={id:editId||Date.now(),client:client,currency:editCur,status:document.getElementById('fStatus').value,serviceType:document.getElementById('fServiceType').value,desc:document.getElementById('fDesc').value.trim(),price:itemsTotal||Number(document.getElementById('fPrice').value)||0,prob:Number(document.getElementById('fProb').value)||PROBS[document.getElementById('fStatus').value],date:document.getElementById('fDate').value,contact:document.getElementById('fContact').value.trim(),notes:document.getElementById('fNotes').value.trim(),projectNum:document.getElementById('fProjectNum').value||'',items:editItems,payments:editPayments};
+  if(editId){var idx=deals.findIndex(function(x){return x.id===editId;});deals[idx]=d;}else deals.unshift(d);
+  persist();render();closeModal();
+}
+function delDeal(id){if(!confirm('Видалити угоду?'))return;deals=deals.filter(function(d){return d.id!==id;});persist();render();}
+
+/* CASH FLOW */
+function txAED(tx){var raw=parseFloat(tx.amount)||0;return tx.currency==='USD'?raw*FX:raw;}
+function getWeekBounds(offset){var now=new Date();var dow=now.getDay();var mondayOff=dow===0?-6:1-dow;var monday=new Date(now);monday.setDate(now.getDate()+mondayOff+offset*7);monday.setHours(0,0,0,0);var sunday=new Date(monday);sunday.setDate(monday.getDate()+6);sunday.setHours(23,59,59,999);return{start:monday,end:sunday};}
+function fmtShort(d){return d.toLocaleDateString('uk',{day:'2-digit',month:'short'});}
+function getCrmPays(){
+  var arr=[];
+  deals.forEach(function(d){if(d.status==='lost')return;(d.payments||[]).forEach(function(p){if(!p.amount||p.paid)return;arr.push({id:'crm_'+d.id+'_'+p.label,date:p.date||'',type:'income',desc:d.client+' — '+(p.label||''),amount:p.amount,currency:d.currency||'USD',source:'crm',note:d.projectNum||'',category:'Sales - Repair Services',group:'Income'});});});
+  return arr;
+}
+function getCfMonths(){
+  var months=new Set();var all=cfTxs.concat(getCrmPays());
+  all.forEach(function(t){if(t.date)months.add(t.date.slice(0,7));});
+  var now=new Date();for(var i=0;i<3;i++){var d=new Date(now.getFullYear(),now.getMonth()+i,1);months.add(d.toISOString().slice(0,7));}
+  return Array.from(months).sort();
+}
+function setBankManual(){
+  var cur=bankAED!==null?String(bankAED):'';
+  var inp=prompt('Поточний залишок Bank_AED:',cur);
+  if(inp===null)return;var val=parseFloat(inp);
+  if(isNaN(val)||val<0){alert('Невірне значення');return;}
+  bankAED=val;localStorage.setItem('cf_bank_aed',String(val));renderCF();
+}
+function renderCF(){
+  var el=document.getElementById('cfContent');
+  var crmPays=getCrmPays();var allTxs=cfTxs.concat(crmPays);
+  var WPAST=2,WFUT=8;var startBal=bankAED!==null?bankAED:0;
+  var pastNet=0;
+  for(var pw=-WPAST;pw<0;pw++){var wb=getWeekBounds(pw);allTxs.forEach(function(t){if(!t.date)return;var td=new Date(t.date);if(td<wb.start||td>wb.end)return;var aed=txAED(t);if(t.type==='income')pastNet+=aed;else pastNet-=aed;});}
+  var running=startBal-pastNet;var totalIn4=0,totalOut4=0;var weekData=[];
+  for(var w=-WPAST;w<WFUT;w++){
+    var bounds=getWeekBounds(w);
+    var wTxs=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);if(cfMonth!=='all'&&t.date.slice(0,7)!==cfMonth)return false;return td>=bounds.start&&td<=bounds.end;});
+    var wTxsAll=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);return td>=bounds.start&&td<=bounds.end;});
+    var wIn=0,wOut=0,wDebt=0;
+    wTxsAll.forEach(function(t){var aed=txAED(t);if(t.type==='income')wIn+=aed;else if(t.type==='debt')wDebt+=aed;else wOut+=aed;});
+    if(w>=0&&w<4){totalIn4+=wIn;totalOut4+=wOut+wDebt;}
+    var balStart=running;running+=wIn-wOut-wDebt;
+    weekData.push({w:w,start:bounds.start,end:bounds.end,txs:wTxs,wIn:wIn,wOut:wOut,wDebt:wDebt,balStart:balStart,balance:running,isPast:w<0});
+  }
+  var bank0=bankAED!==null?bankAED:0;var net4=bank0+totalIn4-totalOut4;var months=getCfMonths();
+  var monthBtns='<button class="cf-mbtn'+(cfMonth==='all'?' active':'')+"\" onclick=\"setCfMonth('all')\">Всі</button>";
+  months.forEach(function(m){var lbl=new Date(m+'-01').toLocaleDateString('uk',{month:'short',year:'2-digit'});monthBtns+='<button class="cf-mbtn'+(cfMonth===m?' active':'')+"\" onclick=\"setCfMonth('"+m+"')\">"+lbl+'</button>';});
+
+  /* Category breakdown for donuts */
+  var catOut={};var catIn=0;
+  allTxs.forEach(function(t){
+    var aed=txAED(t);
+    if(t.type==='income'){catIn+=aed;}
+    else{var cat=t.category||t.type||'Інше';catOut[cat]=(catOut[cat]||0)+aed;}
+  });
+  var catOutSorted=Object.keys(catOut).map(function(k){return{k:k,v:catOut[k]};}).sort(function(a,b){return b.v-a.v;}).slice(0,6);
+  var DONUT_COLORS=['#2563EB','#7C3AED','#059669','#D97706','#DC2626','#0D9488','#EA580C'];
+
+  var html='<div>'
+    +'<div class="cf-controls"><div class="cf-months">'+monthBtns+'</div><button class="cf-print-btn" onclick="window.print()">⬇ Друк / PDF</button><button class="cf-add-btn" onclick="openCfModal()">+ Транзакція</button></div>'
+    +'<div class="cf-kpi-grid">'
+    +'<div class="cf-kpi bank" onclick="setBankManual()" title="Натисніть щоб оновити"><div class="cf-kpi-lbl">Bank_AED зараз ✎</div><div class="cf-kpi-val v-teal">'+(bankAED!==null?fmtAED(bank0):'— натисніть')+'</div><div class="cf-kpi-sub">'+(bankAED!==null?'≈ '+fmtUSD(bank0/FX):'введіть залишок')+'</div></div>'
+    +'<div class="cf-kpi inc"><div class="cf-kpi-lbl">Надходження (4 тижні)</div><div class="cf-kpi-val v-blue">'+fmtAED(totalIn4)+'</div><div class="cf-kpi-sub">≈ '+fmtUSD(totalIn4/FX)+'</div></div>'
+    +'<div class="cf-kpi out"><div class="cf-kpi-lbl">Витрати (4 тижні)</div><div class="cf-kpi-val v-red">'+fmtAED(totalOut4)+'</div><div class="cf-kpi-sub">≈ '+fmtUSD(totalOut4/FX)+'</div></div>'
+    +'<div class="cf-kpi '+(net4>=0?'net-ok':'net-bad')+'"><div class="cf-kpi-lbl">Прогноз кінець тижня 4</div><div class="cf-kpi-val '+(net4>=0?'v-green':'v-red')+'">'+fmtAED(net4)+'</div><div class="cf-kpi-sub">'+(net4>=0?'✓ коштів вистачає':'⚠ нестача коштів')+'</div></div>'
+    +'</div>'
+    +generateExtKPIs(allTxs,bank0,weekData)
+    +generateMonthlyDash(allTxs,bank0)
+    +generateAdvisorHTML(weekData,bank0,totalIn4,totalOut4,net4)
+    +'<div class="cf-chart-card"><div class="cf-chart-hd"><span class="cf-chart-title">Баланс по тижнях (AED)</span><div class="cf-legend"><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--teal)"></span>Залишок</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--accent)"></span>Надходження</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--red)"></span>Витрати</span></div></div><canvas id="cfChart" style="height:160px"></canvas></div>'
+    +generateBreakdownCard(allTxs)
+    +'<div class="cf-charts-row">'
+    +'<div class="cf-donut-card"><div class="cf-donut-title">Структура витрат</div><div class="donut-wrap"><canvas class="donut" id="donutOut"></canvas><div class="donut-legend">'
+    +catOutSorted.map(function(c,i){return '<div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:'+DONUT_COLORS[i]+'"></span>'+esc(c.k.split(' ').slice(0,3).join(' '))+'</span><span class="donut-leg-val">'+fmtAED(c.v)+'</span></div>';}).join('')
+    +'</div></div></div>'
+    +'<div class="cf-donut-card"><div class="cf-donut-title">Надходження vs Витрати</div><div class="donut-wrap"><canvas class="donut" id="donutInOut"></canvas><div class="donut-legend"><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--teal)"></span>Надходження</span><span class="donut-leg-val">'+fmtAED(catIn)+'</span></div><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--red)"></span>Витрати</span><span class="donut-leg-val">'+fmtAED(Object.values(catOut).reduce(function(a,v){return a+v;},0))+'</span></div></div></div></div>'
+    +'</div>'
+    +generateCapexOpex(allTxs)
+    +'<div class="cf-weeks">';
+
+  weekData.forEach(function(wd){
+    if(cfMonth!=='all'){var y1=wd.start.toISOString().slice(0,7);var y2=wd.end.toISOString().slice(0,7);if(y1!==cfMonth&&y2!==cfMonth&&wd.txs.length===0)return;}
+    if(wd.isPast&&wd.txs.length===0)return;
+    var isNow=wd.w===0;
+    // Risk assessment
+    var hasUnconfirmedIncome=wd.txs.filter(function(t){return t.type==='income'&&(t.status==='plan'||!t.status);}).length>0;
+    var hasCritical=wd.txs.filter(function(t){return t.critical;}).length>0;
+    var riskLvl='green';
+    if(wd.balance<0) riskLvl='red';
+    else if(wd.balance<minSafeBalance||hasUnconfirmedIncome||hasCritical) riskLvl='yellow';
+    var lvl=riskLvl==='red'?'w-danger':riskLvl==='yellow'?'w-warn':'';
+    var pill=wd.balance<0?'pill-danger':wd.balance<10000?'pill-warn':'pill-ok';
+    var wlbl=isNow?'Поточний тиждень':(wd.isPast?(Math.abs(wd.w)+' тижні тому'):('Тиждень +'+(wd.w)));
+    var pastMark=wd.isPast?(' <span style="font-size:9px;background:var(--surface3);color:var(--text3);padding:1px 5px;border-radius:3px">минулий</span>'):'';
+    var startIso=wd.start.toISOString().slice(0,10);
+    html+='<div class="cf-week '+lvl+(wd.isPast?' w-past':'')+(isNow?' open':'')+"\" id=\"cfw"+wd.w+'">'
+      +'<div class="cf-wh" onclick="toggleCfW('+wd.w+')">'
+      +'<div class="cf-wlbl"><strong>'+wlbl+pastMark+'</strong><span>'+fmtShort(wd.start)+' — '+fmtShort(wd.end)+'</span><small>Початок тижня: <strong>'+fmtAED(wd.balStart)+'</strong> → Кінець тижня: <strong>'+fmtAED(wd.balance)+'</strong></small></div>'
+      +'<div class="cf-wcol"><div class="cf-wcol-l">Надходження</div><div class="cf-wcol-v col-in">'+(wd.wIn>0?'+'+fmtAED(wd.wIn):'—')+'</div></div>'
+      +'<div class="cf-wcol"><div class="cf-wcol-l">Витрати</div><div class="cf-wcol-v col-out">'+(wd.wOut>0?'−'+fmtAED(wd.wOut):'—')+'</div></div>'
+      +'<div class="cf-wcol"><div class="cf-wcol-l">Борги</div><div class="cf-wcol-v col-debt">'+(wd.wDebt>0?'−'+fmtAED(wd.wDebt):'—')+'</div></div>'
+      +'<div class="cf-pill '+pill+'" title="Залишок на кінець тижня">'+fmtAED(wd.balance)+'</div>'
+      +'<span class="risk-badge risk-'+riskLvl+'">'+{green:'✓',yellow:'⚠',red:'⛔'}[riskLvl]+'</span>'+'<div class="cf-chev">▼</div></div>'
+      +'<div class="cf-wb"><div class="cf-txlist">'+(wd.txs.length===0?'<div class="cf-empty">Немає транзакцій</div>':wd.txs.map(renderCfTx).join(''))+'</div>'
+      +(!wd.isPast?('<div class="cf-qadd"><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'expense-opex\')">+ OPEX</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'expense-capex\')">+ CAPEX</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'debt\')">+ Борг</button><button class="cf-qbtn" onclick="openCfModal(\''+startIso+'\',\'income\')">+ Надходження</button></div>'):'')
+      +'</div></div>';
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+  requestAnimationFrame(function(){
+    drawLineChart(weekData,bank0);
+    drawDonut('donutOut',catOutSorted.map(function(c){return c.v;}),catOutSorted.map(function(c,i){return DONUT_COLORS[i];}),true);
+    var totalOutAll=Object.values(catOut).reduce(function(a,v){return a+v;},0);
+    drawDonut('donutInOut',[catIn,totalOutAll],['#0D9488','#DC2626'],true);
+  });
+}
+
+var qaCurrentId=null;
+function openQA(id){
+  var tx=cfTxs.find(function(t){return t.id===id;});
+  if(!tx)return;
+  qaCurrentId=id;
+  document.getElementById('qaTitle').textContent='Факт: '+((tx.category||tx.desc||'').substring(0,40));
+  document.getElementById('qaDesc').textContent='Планова сума: '+fmtCur(tx.amount,tx.currency||'AED')+(tx.actual?' | Поточний факт: '+fmtCur(tx.actual,tx.currency||'AED'):'');
+  document.getElementById('qaInput').value=tx.actual||tx.amount||'';
+  document.getElementById('qaOverlay').classList.add('open');
+  setTimeout(function(){var inp=document.getElementById('qaInput');inp.focus();inp.select();},100);
+}
+function closeQA(){document.getElementById('qaOverlay').classList.remove('open');qaCurrentId=null;}
+function saveQA(){
+  var val=parseFloat(document.getElementById('qaInput').value);
+  if(isNaN(val)||val<0){alert('Введіть коректну суму');return;}
+  var tx=cfTxs.find(function(t){return t.id===qaCurrentId;});
+  if(!tx)return;
+  tx.actual=val;
+  // Auto update status
+  if(tx.type==='income'&&tx.status==='confirmed') tx.status='received';
+  else if(tx.type!=='income'&&tx.status==='topay') tx.status='paid';
+  else if(tx.status==='plan') tx.status=tx.type==='income'?'received':'paid';
+  saveCfLocal();closeQA();renderCF();
+}
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&qaCurrentId)saveQA();if(e.key==='Escape'&&qaCurrentId)closeQA();});
+
+function generateCapexOpex(allTxs){
+  var capexCats={};var opexCats={};
+  var capexTotal=0;var opexTotal=0;
+  allTxs.forEach(function(t){
+    if(t.type==='income'||t.source==='crm') return;
+    var aed=txAED(t);
+    var cat=t.category||'Інше';
+    if(t.group==='CAPEX'||t.type==='expense-capex'){
+      capexCats[cat]=(capexCats[cat]||0)+aed;capexTotal+=aed;
+    } else {
+      opexCats[cat]=(opexCats[cat]||0)+aed;opexTotal+=aed;
+    }
+  });
+  function buildRows(cats,total,color){
+    return Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).slice(0,6).map(function(c){
+      var v=cats[c];var pct=total>0?Math.round(v/total*100):0;
+      return '<div class="cf-co-row">'
+        +'<span class="cf-co-row-label" title="'+esc(c)+'">'+esc(c.split(' ').slice(0,3).join(' '))+'</span>'
+        +'<div class="cf-co-row-bar"><div class="cf-co-row-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'
+        +'<span class="cf-co-row-val">'+fmtAED(v)+'</span>'
+        +'<span class="cf-co-row-pct">'+pct+'%</span>'
+        +'</div>';
+    }).join('');
+  }
+  if(capexTotal===0&&opexTotal===0) return '';
+  return '<div class="cf-capex-opex">'
+    +'<div class="cf-co-card"><div class="cf-co-title"><span style="color:#7C3AED">CAPEX — Капітальні витрати</span><span class="cf-co-total">'+fmtAED(capexTotal)+'</span></div>'+(capexTotal>0?'<div class="cf-co-rows">'+buildRows(capexCats,capexTotal,'#7C3AED')+'</div>':'<div style="font-size:12px;color:var(--text3)">Немає транзакцій CAPEX</div>')+'</div>'
+    +'<div class="cf-co-card"><div class="cf-co-title"><span style="color:#2563EB">OPEX — Операційні витрати</span><span class="cf-co-total">'+fmtAED(opexTotal)+'</span></div>'+(opexTotal>0?'<div class="cf-co-rows">'+buildRows(opexCats,opexTotal,'#2563EB')+'</div>':'<div style="font-size:12px;color:var(--text3)">Немає транзакцій OPEX</div>')+'</div>'
+    +'</div>';
+}
+
+function drawLineChart(weekData,startBal){
+  var canvas=document.getElementById('cfChart');if(!canvas)return;
+  var ctx=canvas.getContext('2d');var W=canvas.offsetWidth||760;var H=220;
+  canvas.width=W*2;canvas.height=H*2;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.scale(2,2);
+  var pad={t:20,r:12,b:34,l:64};var cW=W-pad.l-pad.r;var cH=H-pad.t-pad.b;
+  var bals=weekData.map(function(d){return d.balance;});
+  var ins=weekData.map(function(d){return d.wIn;});
+  var outs=weekData.map(function(d){return d.wOut+d.wDebt;});
+  var allV=bals.concat(ins,outs,[minSafeBalance]);
+  var minV=Math.min(0,Math.min.apply(null,allV));var maxV=Math.max.apply(null,allV)||1;var range=maxV-minV||1;
+  function yp(v){return pad.t+cH-((v-minV)/range*cH);}
+  function xp(i){return pad.l+(weekData.length>1?i/(weekData.length-1)*cW:cW/2);}
+  ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,W,H);
+  for(var gi=0;gi<=4;gi++){
+    var gy=pad.t+gi/4*cH;ctx.strokeStyle='#E2E5EC';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(pad.l+cW,gy);ctx.stroke();
+    var gv=maxV-gi*(range/4);ctx.fillStyle='#8B92A5';ctx.font='9px monospace';ctx.textAlign='right';
+    ctx.fillText('AED '+Math.round(gv/1000)+'k',pad.l-3,gy+3);
+  }
+  if(minV<0){
+    var zy=yp(0);ctx.strokeStyle='rgba(220,38,38,0.3)';ctx.lineWidth=1;
+    ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(pad.l,zy);ctx.lineTo(pad.l+cW,zy);ctx.stroke();ctx.setLineDash([]);
+  }
+  if(minSafeBalance>minV&&minSafeBalance<maxV){
+    var msy=yp(minSafeBalance);
+    ctx.strokeStyle='rgba(220,38,38,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(pad.l,msy);ctx.lineTo(pad.l+cW,msy);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(220,38,38,0.7)';ctx.font='8px monospace';ctx.textAlign='left';
+    ctx.fillText('min safe',pad.l+3,msy-3);
+  }
+  var bw=Math.max(6,cW/weekData.length*0.22);
+  weekData.forEach(function(d,i){
+    if(d.wIn>0){var yt=yp(d.wIn);var yb=yp(0);ctx.fillStyle='rgba(37,99,235,0.2)';ctx.fillRect(xp(i)-bw,yt,bw,yb-yt);}
+    var out=d.wOut+d.wDebt;
+    if(out>0){var yt2=yp(out);var yb2=yp(0);ctx.fillStyle='rgba(220,38,38,0.2)';ctx.fillRect(xp(i),yt2,bw,yb2-yt2);}
+  });
+  var grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+  grad.addColorStop(0,'rgba(13,148,136,0.15)');grad.addColorStop(1,'rgba(13,148,136,0)');
+  ctx.beginPath();ctx.moveTo(xp(0),yp(bals[0]));
+  bals.forEach(function(b,i){if(i>0)ctx.lineTo(xp(i),yp(b));});
+  ctx.lineTo(xp(bals.length-1),pad.t+cH);ctx.lineTo(xp(0),pad.t+cH);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='#0D9488';ctx.lineWidth=2.5;ctx.setLineDash([]);
+  ctx.beginPath();
+  bals.forEach(function(b,i){if(i===0)ctx.moveTo(xp(i),yp(b));else ctx.lineTo(xp(i),yp(b));});
+  ctx.stroke();
+  bals.forEach(function(b,i){
+    ctx.fillStyle=b<0?'#DC2626':'#0D9488';
+    ctx.beginPath();ctx.arc(xp(i),yp(b),4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  var labels=weekData.map(function(d){return d.w===0?'Зараз':fmtShort(d.start);});
+  ctx.fillStyle='#8B92A5';ctx.font='9px monospace';ctx.textAlign='center';
+  labels.forEach(function(l,i){ctx.fillText(l,xp(i),H-pad.b+14);});
+}
+
+function drawDonut(id,values,colors,labels){
+  var canvas=document.getElementById(id);if(!canvas)return;
+  var ctx=canvas.getContext('2d');var S=160;
+  canvas.width=S*2;canvas.height=S*2;canvas.style.width=S+'px';canvas.style.height=S+'px';ctx.scale(2,2);
+  var cx=S/2,cy=S/2,r=48,rIn=30;
+  var total=values.reduce(function(a,v){return a+v;},0);
+  if(!total){
+    ctx.fillStyle='#E2E5EC';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,rIn,0,Math.PI*2);ctx.fill();return;
+  }
+  var angle=-Math.PI/2;
+  values.forEach(function(v,i){
+    var sweep=v/total*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+sweep);ctx.closePath();
+    ctx.fillStyle=colors[i]||'#ccc';ctx.fill();
+    if(sweep>0.3&&labels){
+      var pct=Math.round(v/total*100);var midAngle=angle+sweep/2;
+      var lx=cx+Math.cos(midAngle)*(r+rIn)/2;var ly=cy+Math.sin(midAngle)*(r+rIn)/2;
+      ctx.fillStyle='rgba(255,255,255,0.95)';ctx.font='bold 9px monospace';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pct+'%',lx,ly);
+    }
+    angle+=sweep;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,rIn,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle='#1A1D23';ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(fmtAED(total).replace('AED ',''),cx,cy-6);
+  ctx.font='8px monospace';ctx.fillStyle='#8B92A5';ctx.fillText('AED',cx,cy+7);
+}
+
+function generateBreakdownCard(allTxs){
+  var capexItems={};var opexItems={};
+  var capexTotal=0;var opexTotal=0;
+  allTxs.forEach(function(t){
+    if(t.type==='income'||t.source==='crm') return;
+    var aed=txAED(t);
+    var cat=t.category||t.type||'Інше';
+    if(t.type==='expense-capex'||t.group==='CAPEX'){
+      capexItems[cat]=(capexItems[cat]||0)+aed; capexTotal+=aed;
+    } else {
+      opexItems[cat]=(opexItems[cat]||0)+aed; opexTotal+=aed;
+    }
+  });
+  function buildRows(items,total,color){
+    var sorted=Object.keys(items).map(function(k){return{k:k,v:items[k]};}).sort(function(a,b){return b.v-a.v;}).slice(0,6);
+    if(!sorted.length) return '<div style="font-size:11px;color:var(--text3);padding:8px 0">Немає транзакцій</div>';
+    return sorted.map(function(r){
+      var pct=total>0?Math.round(r.v/total*100):0;
+      return '<div class="cf-breakdown-row">'
+        +'<span class="cf-breakdown-label" title="'+esc(r.k)+'">'+esc(r.k.split(' ').slice(0,3).join(' '))+'</span>'
+        +'<div style="text-align:right"><div class="cf-breakdown-amount">'+fmtAED(r.v)+'</div>'
+        +'<div class="cf-breakdown-bar"><div class="cf-breakdown-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>'
+        +'</div>';
+    }).join('');
+  }
+  var totalAll=capexTotal+opexTotal;
+  var capexPct=totalAll>0?Math.round(capexTotal/totalAll*100):0;
+  var opexPct=totalAll>0?Math.round(opexTotal/totalAll*100):0;
+  return '<div class="cf-breakdown-card">'
+    +'<div class="cf-breakdown-title">📊 Структура витрат — CAPEX / OPEX</div>'
+    +'<div style="display:flex;gap:16px;margin-bottom:12px;font-size:11px">'
+    +'<span>Всього: <strong style="font-family:var(--mono)">'+fmtAED(totalAll)+'</strong></span>'
+    +'<span style="color:var(--accent2)">CAPEX: <strong>'+capexPct+'%</strong> ('+fmtAED(capexTotal)+')</span>'
+    +'<span style="color:var(--accent)">OPEX: <strong>'+opexPct+'%</strong> ('+fmtAED(opexTotal)+')</span>'
+    +'</div>'
+    +'<div class="cf-breakdown-grid">'
+    +'<div class="cf-breakdown-section">'
+    +'<div class="cf-breakdown-hd"><span style="color:var(--accent2)">CAPEX — Капітальні витрати</span><span class="cf-breakdown-hd-total" style="color:var(--accent2)">'+fmtAED(capexTotal)+'</span></div>'
+    +buildRows(capexItems,capexTotal,'#7C3AED')
+    +'</div>'
+    +'<div class="cf-breakdown-section">'
+    +'<div class="cf-breakdown-hd"><span style="color:var(--accent)">OPEX — Операційні витрати</span><span class="cf-breakdown-hd-total" style="color:var(--accent)">'+fmtAED(opexTotal)+'</span></div>'
+    +buildRows(opexItems,opexTotal,'#2563EB')
+    +'</div>'
+    +'</div></div>';
+}
+
+function generateExtKPIs(allTxs,bankNow,weekData){
+  // Critical payments next 14 days
+  var now=new Date();var in14=new Date(now.getTime()+14*24*3600*1000);
+  var critPayments=allTxs.filter(function(t){
+    if(!t.date||t.source==='crm') return false;
+    if(t.type==='income') return false;
+    if(!t.critical) return false;
+    var td=new Date(t.date);
+    return td>=now&&td<=in14;
+  }).reduce(function(a,t){return a+txAED(t);},0);
+
+  // Free Cash = bankNow - critPayments
+  var freeCash=bankNow-critPayments;
+
+  // Runway = bankNow / avg monthly spend
+  var totalSpend=allTxs.filter(function(t){return t.type!=='income'&&t.source!=='crm';}).reduce(function(a,t){return a+txAED(t);},0);
+  // Get date range of transactions
+  var dates=allTxs.filter(function(t){return t.date&&t.source!=='crm';}).map(function(t){return new Date(t.date);});
+  var runway=0;var runwayTxt='—';
+  if(dates.length>0&&totalSpend>0){
+    var minD=new Date(Math.min.apply(null,dates));var maxD=new Date(Math.max.apply(null,dates));
+    var months=Math.max(1,(maxD-minD)/(1000*60*60*24*30));
+    var avgMonthly=totalSpend/months;
+    if(avgMonthly>0){runway=bankNow/avgMonthly;runwayTxt=runway.toFixed(1)+' міс';}
+  }
+
+  // Cash Gap Date - first week where balance goes negative
+  var gapWeek=null;
+  weekData.forEach(function(wd){if(!wd.isPast&&wd.balance<0&&!gapWeek)gapWeek=wd;});
+  var gapTxt=gapWeek?fmtShort(gapWeek.start)+' – '+fmtShort(gapWeek.end):'Не виявлено';
+  var gapColor=gapWeek?'var(--red)':'var(--green)';
+
+  var runwayColor=runway<1?'var(--red)':runway<3?'var(--amber)':'var(--green)';
+  var freeColor=freeCash<0?'var(--red)':freeCash<50000?'var(--amber)':'var(--green)';
+
+  return '<div class="cf-kpi-grid-ext">'
+    +'<div class="cf-kpi-sm free"><div class="cf-kpi-sm-lbl">💰 Вільний залишок</div><div class="cf-kpi-sm-val" style="color:'+freeColor+'">'+fmtAED(freeCash)+'</div><div class="cf-kpi-sm-sub">Баланс − критичні платежі 14 днів</div></div>'
+    +'<div class="cf-kpi-sm critical"><div class="cf-kpi-sm-lbl">🚨 Критичні платежі (14 днів)</div><div class="cf-kpi-sm-val" style="color:'+(critPayments>0?'var(--red)':'var(--green)')+'">'+fmtAED(critPayments)+'</div><div class="cf-kpi-sm-sub">Платежі з позначкою 🚨</div></div>'
+    +'<div class="cf-kpi-sm runway"><div class="cf-kpi-sm-lbl">⏱ Runway</div><div class="cf-kpi-sm-val" style="color:'+runwayColor+'">'+runwayTxt+'</div><div class="cf-kpi-sm-sub">Поточний баланс / середні витрати/міс</div></div>'
+    +'<div class="cf-kpi-sm gap"><div class="cf-kpi-sm-lbl">📅 Дата касового розриву</div><div class="cf-kpi-sm-val" style="font-size:14px;color:'+gapColor+'">'+gapTxt+'</div><div class="cf-kpi-sm-sub">'+(gapWeek?'Тиждень '+gapWeek.w:'Фінансова позиція стабільна')+'</div></div>'
+    +'</div>'
+    +'<div class="cf-min-balance-row"><span><span class="cf-min-line"></span>Мінімальний безпечний залишок:</span><input type="number" value="'+minSafeBalance+'" onchange="setMinBalance(this.value)" placeholder="50000"><span style="color:var(--text3)">AED</span></div>';
+}
+function setMinBalance(v){minSafeBalance=parseFloat(v)||50000;localStorage.setItem('cf_min_safe',String(minSafeBalance));renderCF();}
+
+function getMonthlyForecast(allTxs, bankStart){
+  // Calculate running balance month by month from now to Dec 2026
+  var months = ['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+  var result = [];
+  var running = bankStart;
+
+  months.forEach(function(ym){
+    var yr = parseInt(ym.split('-')[0]);
+    var mo = parseInt(ym.split('-')[1]);
+    var startD = new Date(yr, mo-1, 1, 0,0,0,0);
+    var endD = new Date(yr, mo, 0, 23,59,59,999);
+
+    var mIn=0, mOut=0;
+    allTxs.forEach(function(t){
+      if(!t.date) return;
+      var td = new Date(t.date);
+      if(td < startD || td > endD) return;
+      var aed = txAED(t);
+      if(t.type==='income') mIn+=aed;
+      else mOut+=aed;
+    });
+
+    var startBal = running;
+    running += mIn - mOut;
+    var monthNames = {
+      '2026-05':'Трав 26','2026-06':'Черв 26','2026-07':'Лип 26',
+      '2026-08':'Серп 26','2026-09':'Вер 26','2026-10':'Жовт 26',
+      '2026-11':'Лист 26','2026-12':'Груд 26'
+    };
+    result.push({ym:ym, name:monthNames[ym]||ym, startBal:startBal, endBal:running, mIn:mIn, mOut:mOut, hasGap:running<0});
+  });
+  return result;
+}
+
+function generateMonthlyDash(allTxs, bankNow){
+  var forecast = getMonthlyForecast(allTxs, bankNow);
+  var html = '<div class="cf-monthly-dash"><div class="cf-monthly-dash-title">📅 Прогноз залишку по місяцях (на кінець місяця)</div><div class="cf-monthly-strip">';
+  forecast.forEach(function(m){
+    var balClass = m.endBal < 0 ? ' neg' : '';
+    var activeClass = cfMonth === m.ym ? ' active' : '';
+    var gapClass = m.hasGap ? ' has-gap' : '';
+    var gapHtml = m.hasGap ? '<div class="cf-month-card-gap">⚠ Розрив</div>' : '';
+    var inOut = (m.mIn>0?('+'+fmtAED(m.mIn)):'—') + (m.mOut>0?(' / −'+fmtAED(m.mOut)):'');
+    var onclk = 'setCfMonth(' + JSON.stringify(m.ym) + ')';
+    html += '<div class="cf-month-card'+activeClass+gapClass+'" onclick="'+onclk+'">'
+      +'<div class="cf-month-card-name">'+m.name+'</div>'
+      +'<div class="cf-month-card-bal'+balClass+'">'+fmtAED(m.endBal)+'</div>'
+      +'<div class="cf-month-card-sub">'+inOut+'</div>'
+      +gapHtml+'</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function generateAdvisorHTML(weekData,bankNow,totalIn4,totalOut4,net4){
+  var insights=[];
+  // 1. Check for cash gaps week by week
+  var firstGapWeek=null;var gapAmount=0;
+  weekData.forEach(function(wd){
+    if(!wd.isPast&&wd.balance<0&&firstGapWeek===null){
+      firstGapWeek=wd;gapAmount=Math.abs(wd.balance);
+    }
+  });
+  if(firstGapWeek){
+    var wLabel=firstGapWeek.w===0?'поточному тижні':'тижні '+firstGapWeek.w+' ('+fmtShort(firstGapWeek.start)+')';
+    insights.push({type:'danger',icon:'🚨',text:'<strong>Касовий розрив на '+wLabel+'</strong> — не вистачає <strong>'+fmtAED(gapAmount)+'</strong> (≈'+fmtUSD(gapAmount/FX)+'). Необхідно або прискорити надходження, або перенести витрати.'});
+  } else if(net4<50000&&net4>=0){
+    insights.push({type:'warn',icon:'⚠️',text:'<strong>Низький залишок через 4 тижні:</strong> '+fmtAED(net4)+'. Рекомендується забезпечити додаткові надходження або скоротити витрати.'});
+  } else if(net4>0){
+    insights.push({type:'ok',icon:'✅',text:'<strong>Позитивний прогноз:</strong> через 4 тижні залишок складе <strong>'+fmtAED(net4)+'</strong>. Фінансова позиція стабільна.'});
+  }
+
+  // 2. Check income vs expenses ratio
+  if(totalOut4>0&&totalIn4>0){
+    var ratio=totalIn4/totalOut4;
+    if(ratio<0.5){
+      insights.push({type:'warn',icon:'📉',text:'<strong>Витрати в 2+ рази перевищують надходження</strong> за 4 тижні ('+fmtAED(totalIn4)+' vs '+fmtAED(totalOut4)+'). Перевірте чи всі очікувані надходження внесені в систему.'});
+    } else if(ratio>2){
+      insights.push({type:'ok',icon:'📈',text:'Надходження значно перевищують витрати (коефіцієнт '+ratio.toFixed(1)+'x). Сприятливий період для інвестицій в обладнання або поповнення запасів.'});
+    }
+  }
+
+  // 3. Check if bank balance is low
+  if(bankNow>0&&bankNow<50000){
+    insights.push({type:'warn',icon:'🏦',text:'<strong>Поточний залишок Bank_AED низький:</strong> '+fmtAED(bankNow)+'. Рекомендується мати мінімальний буфер AED 50,000 для операційної стійкості.'});
+  }
+
+  // 4. Upcoming large outflows
+  var bigWeeks=weekData.filter(function(wd){return !wd.isPast&&(wd.wOut+wd.wDebt)>100000;});
+  if(bigWeeks.length>0){
+    var bw=bigWeeks[0];
+    insights.push({type:'info',icon:'💸',text:'<strong>Великі витрати на тижні '+fmtShort(bw.start)+':</strong> '+fmtAED(bw.wOut+bw.wDebt)+'. Переконайтесь що надходження від клієнтів надійдуть до цього тижня.'});
+  }
+
+  // 5. No bank balance set
+  if(bankNow===0){
+    insights.push({type:'info',icon:'ℹ️',text:'<strong>Залишок банку не встановлено.</strong> Натисніть на картку "Bank_AED зараз" і введіть поточний залишок для точного прогнозу.'});
+  }
+
+  if(insights.length===0) return '';
+
+  var html='<div class="cf-advisor-card"><div class="cf-advisor-title">🤖 Фінансовий аналіз</div><div class="cf-advisor-body">';
+  insights.forEach(function(ins){
+    html+='<div class="cf-advisor-item '+ins.type+'"><div class="cf-advisor-icon">'+ins.icon+'</div><div class="cf-advisor-text">'+ins.text+'</div></div>';
+  });
+  html+='</div></div>';
+  return html;
+}
+
+function renderCfTx(t){
+  var typeMap={'expense-capex':['b-capex','CAPEX','amt-out'],'expense-opex':['b-opex','OPEX','amt-out'],'debt':['b-debt','БОРГ','amt-debt'],'income':['b-income','ДОХІД','amt-in']};
+  var tm=typeMap[t.type]||['b-opex','OPEX','amt-out'];
+  var sign=t.type==='income'?'+':'−';
+  var aed=txAED(t);
+  var isCrm=t.source==='crm';
+
+  // Use actual amount if available
+  var actualAed=t.actual?toAED(t.actual,t.currency||'AED'):null;
+  var displayAed=actualAed!==null?actualAed:aed;
+  var variance=actualAed!==null?(actualAed-aed):null;
+
+  // Status badge - click cycles through statuses
+  var statusMap={plan:'status-plan',topay:'status-topay',paid:'status-paid',confirmed:'status-confirm',received:'status-paid'};
+  var statusLbl={plan:'План',topay:'До оплати',paid:'Оплачено',confirmed:'Підтв.',received:'Отримано'};
+  var st=t.status||'plan';
+  var txId=t.id;
+  var statusHtml=!isCrm
+    ?('<button class="cf-tx-status '+statusMap[st]+'" onclick="cycleCfStatus('+JSON.stringify(txId)+');event.stopPropagation()">'+statusLbl[st]+'</button>')
+    :'<span class="cf-tx-status status-confirm">CRM</span>';
+
+  // Fact button
+  var factLabel=t.actual?('✓ '+fmtAED(toAED(t.actual,t.currency||'AED'))):'+ факт';
+  var factBtn=!isCrm
+    ?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQuickActual('+JSON.stringify(txId)+',event);event.stopPropagation()">'+factLabel+'</button>')
+    :'<span></span>';
+
+  // Critical toggle - show 🚨 icon
+  var critHtml=!isCrm
+    ?('<div class="cf-tx-critical'+(t.critical?' on':'')+'" onclick="toggleCfCritical('+JSON.stringify(txId)+');event.stopPropagation()" title="Критичний платіж">'+(t.critical?'🚨':'☐')+'</div>')
+    :'<span></span>';
+
+  // Edit button
+  var editBtn=!isCrm
+    ?('<button class="cf-del" onclick="editCfTx('+JSON.stringify(txId)+');event.stopPropagation()" title="Редагувати">✎</button>')
+    :'<span></span>';
+
+  // Delete button
+  var delBtn=!isCrm
+    ?('<button class="cf-del" onclick="delCfTx('+JSON.stringify(txId)+');event.stopPropagation()">✕</button>')
+    :'<span></span>';
+
+  // Variance
+  var varHtml='<span></span>';
+  if(variance!==null){
+    var varPct=aed>0?Math.round(Math.abs(variance)/aed*100):0;
+    var varClass=variance>0?'variance-pos':variance<0?'variance-neg':'variance-zero';
+    varHtml='<span class="cf-tx-variance '+varClass+'">'+(variance>0?'+':'')+fmtAED(variance)+'<br>'+varPct+'%</span>';
+  }
+
+  var catTxt=t.category||t.desc||'—';
+  var descTxt=(t.desc&&t.category&&t.desc!==t.category)?('<br><span style="font-size:10px;color:var(--text3);font-style:italic">'+esc(t.desc)+'</span>'):'';
+  var crmBadge=isCrm?'<span style="font-size:9px;background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:var(--mono)">CRM</span>':'';
+  var amtExtra=t.currency==='USD'?'<br><span style="font-size:9px;color:var(--text3)">$'+Math.round(parseFloat(t.amount)||0).toLocaleString()+'</span>':'';
+
+  // Row background
+  var rowBg='';
+  if(t.critical) rowBg='background:#FFF5F5;border-color:#FECACA;';
+  else if(st==='paid'||st==='received') rowBg='background:#F8FFF9;';
+
+  return '<div class="cf-tx" style="grid-template-columns:90px 1fr 100px 60px 70px 80px 60px 24px 24px;'+rowBg+'">'
+    +'<span class="cf-tx-date">'+(t.date||'—')+'</span>'
+    +'<span class="cf-tx-desc">'+esc(catTxt)+crmBadge+descTxt+'</span>'
+    +'<span class="cf-tx-amt '+tm[2]+'">'+sign+fmtAED(displayAed)+amtExtra+'</span>'
+    +'<span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'
+    +statusHtml
+    +factBtn
+    +varHtml
+    +critHtml
+    +editBtn
+    +delBtn
+    +'</div>';
+}
+function cycleCfStatus(id){
+  var tx=cfTxs.find(function(t){return t.id===id;});
+  if(!tx)return;
+  var isIncome=tx.type==='income';
+  var cycleExp=['plan','topay','paid'];
+  var cycleInc=['plan','confirmed','received'];
+  var cycle=isIncome?cycleInc:cycleExp;
+  var cur=tx.status||'plan';
+  var idx2=cycle.indexOf(cur);
+  tx.status=cycle[(idx2+1)%cycle.length];
+  saveCfLocal();renderCF();
+}
+function toggleCfCritical(id){
+  var tx=cfTxs.find(function(t){return t.id===id;});
+  if(!tx)return;
+  tx.critical=!tx.critical;
+  saveCfLocal();renderCF();
+}
+function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el)el.classList.toggle('open');}
+function delCfTx(id){if(!confirm('Видалити транзакцію?'))return;cfTxs=cfTxs.filter(function(t){return t.id!==id;});saveCfLocal();renderCF();}
+function setCfMonth(m){cfMonth=m;renderCF();}
+
+function editCfTx(id){
+  if(typeof id !== 'string' && typeof id !== 'number') return;
+  cfEditId=id;
+  var tx=cfTxs.find(function(t){return t.id===id;});
+  if(!tx){console.warn('TX not found:',id);return;}
+  document.getElementById('cfDate').value=tx.date||'';
+  document.getElementById('cfType').value=tx.type||'expense-opex';
+  document.getElementById('cfGroup').value=tx.group||'OPEX';
+  var catEl=document.getElementById('cfCategory');
+  if(catEl) catEl.value=tx.category||'';
+  document.getElementById('cfDesc').value=tx.desc||'';
+  document.getElementById('cfAmount').value=tx.amount||'';
+  document.getElementById('cfActual').value=tx.actual||'';
+  document.getElementById('cfNote').value=tx.note||'';
+  document.getElementById('cfCritical').checked=tx.critical||false;
+  updateCfStatus();
+  var stEl=document.getElementById('cfStatus');
+  if(stEl) stEl.value=tx.status||'plan';
+  setCfCur(tx.currency||'AED');
+  var overlay=document.getElementById('cfOverlay');
+  if(overlay) overlay.classList.add('open');
+  setTimeout(function(){
+    var el=document.getElementById('cfDesc');
+    if(el) el.focus();
+  },100);
+}
+
+/* ── PROJECT REGISTRY ─────────────────────────────── */
+var PROJ_KEY='avronis_projects';
+
+function loadProjects(){
+  try{return JSON.parse(localStorage.getItem(PROJ_KEY)||'[]');}catch(e){return[];}
+}
+function saveProjects(projects){
+  localStorage.setItem(PROJ_KEY,JSON.stringify(projects));
+}
+
+function syncProjectsFromDeals(){
+  // Auto-create registry entries for deals that have project numbers
+  var projects=loadProjects();
+  var existingNums={};
+  projects.forEach(function(p){existingNums[p.projectNum]=true;});
+  var changed=false;
+  deals.forEach(function(d){
+    if(!d.projectNum) return;
+    if(!existingNums[d.projectNum]){
+      projects.push({
+        projectNum:d.projectNum,
+        client:d.client,
+        dealId:d.id,
+        status:d.status,
+        serviceType:d.serviceType||'',
+        desc:d.desc||'',
+        aggregates:[],
+        created:new Date().toISOString()
+      });
+      existingNums[d.projectNum]=true;
+      changed=true;
+    } else {
+      // Update status from deal
+      projects.forEach(function(p){
+        if(p.projectNum===d.projectNum){
+          p.status=d.status;p.client=d.client;
+        }
+      });
+      changed=true;
+    }
+  });
+  if(changed) saveProjects(projects);
+  return projects;
+}
+
+function renderRegistry(){
+  var el=document.getElementById('registryContent');
+  if(!el) return;
+  var projects=syncProjectsFromDeals();
+  projects.sort(function(a,b){return (b.projectNum||'').localeCompare(a.projectNum||'');});
+
+  var html='<div class="reg-header">'
+    +'<div class="reg-title">📋 Реєстр проектів</div>'
+    +'<div style="font-size:12px;color:var(--text3)">'+projects.length+' проектів · Клікніть на проект щоб внести агрегати</div>'
+    +'</div>';
+
+  if(!projects.length){
+    html+='<div class="reg-empty"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-weight:600">Реєстр порожній</div><div style="margin-top:6px;font-size:12px">Номери проектів з’являться автоматично коли угода отримає статус Договір або В роботі</div></div>';
+    el.innerHTML=html;return;
+  }
+
+  projects.forEach(function(p,pi){
+    var aggrCount=(p.aggregates||[]).length;
+    var statusBadge='<span class="badge '+(p.status||'new')+'">'+(LABELS[p.status]||p.status||'—')+'</span>';
+    html+='<div class="reg-card" id="regCard'+pi+'">'
+      +'<div class="reg-card-hd" onclick="toggleRegCard('+pi+')">'
+      +'<span class="reg-pnum">'+esc(p.projectNum)+'</span>'
+      +'<div><div class="reg-client">'+esc(p.client)+'</div><div style="font-size:11px;color:var(--text3)">'+(p.serviceType?esc(p.serviceType):'')+(p.desc?' · '+esc(p.desc.substring(0,40)):'')+'</div></div>'
+      +'<div class="reg-status">'+statusBadge+'</div>'
+      +'<div class="reg-count">'+(aggrCount>0?aggrCount+' агрегатів':'—')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(p.created?p.created.slice(0,10):'')+'</div>'
+      +'<div style="color:var(--text3);font-size:12px;text-align:center">▼</div>'
+      +'</div>'
+      +'<div class="reg-body">'
+      +'<table class="reg-aggr-table">'
+      +'<thead><tr><th style="width:20%">Тип агрегату</th><th style="width:25%">Заводський №</th><th style="width:15%">К-ть</th><th style="width:20%">Статус роботи</th><th style="width:15%">Нотатка</th><th style="width:5%"></th></tr></thead>'
+      +'<tbody id="aggrBody'+pi+'">'
+      +(p.aggregates||[]).map(function(ag,ai){return renderAggrRow(pi,ai,ag);}).join('')
+      +'</tbody>'
+      +'</table>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<button class="reg-add-aggr" onclick="addAggr('+pi+')">+ Додати агрегат</button>'
+      +'<button class="reg-save-btn" onclick="saveProjectAggr('+pi+')">Зберегти</button>'
+      +'</div>'
+      +'</div>'
+      +'</div>';
+  });
+
+  el.innerHTML=html;
+}
+
+function renderAggrRow(pi,ai,ag){
+  var aggrTypes=['КАУ-30Б','РА-60Б','КАУ-115АМ','УГ-50','Інший'];
+  var workStatuses=['Прийнятий','В роботі','Завершено','Відвантажено'];
+  var typeOpts=aggrTypes.map(function(t){return '<option'+(ag.type===t?' selected':'')+'>'+esc(t)+'</option>';}).join('');
+  var stOpts=workStatuses.map(function(s){return '<option'+(ag.workStatus===s?' selected':'')+'>'+esc(s)+'</option>';}).join('');
+  var sType=JSON.stringify('type');
+  var sSerial=JSON.stringify('serial');
+  var sQty=JSON.stringify('qty');
+  var sWS=JSON.stringify('workStatus');
+  var sNote=JSON.stringify('note');
+  return '<tr>'
+    +'<td><select onchange="updAggr('+pi+','+ai+','+sType+',this.value)">'+typeOpts+'</select></td>'
+    +'<td><input value="'+esc(ag.serial||'')+'" oninput="updAggr('+pi+','+ai+','+sSerial+',this.value)" placeholder="напр. 20920390"></td>'
+    +'<td><input type="number" value="'+(ag.qty||1)+'" oninput="updAggr('+pi+','+ai+','+sQty+',this.value)" min="1" style="width:60px"></td>'
+    +'<td><select onchange="updAggr('+pi+','+ai+','+sWS+',this.value)">'+stOpts+'</select></td>'
+    +'<td><input value="'+esc(ag.note||'')+'" oninput="updAggr('+pi+','+ai+','+sNote+',this.value)" placeholder="нотатка"></td>'
+    +'<td><button class="ibtn del" onclick="delAggr('+pi+','+ai+')">✕</button></td>'
+    +'</tr>';
+}
+function toggleRegCard(pi){
+  var card=document.getElementById('regCard'+pi);
+  if(card) card.classList.toggle('open');
+}
+
+function addAggr(pi){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  if(!projects[pi].aggregates) projects[pi].aggregates=[];
+  projects[pi].aggregates.push({type:'КАУ-115АМ',serial:'',qty:1,workStatus:'Прийнятий',note:''});
+  saveProjects(projects);
+  var tbody=document.getElementById('aggrBody'+pi);
+  if(tbody){
+    var ai=projects[pi].aggregates.length-1;
+    var row=document.createElement('tr');
+    row.outerHTML='';
+    tbody.insertAdjacentHTML('beforeend',renderAggrRow(pi,ai,projects[pi].aggregates[ai]));
+  }
+}
+
+function updAggr(pi,ai,field,val){
+  var projects=loadProjects();
+  if(!projects[pi]||!projects[pi].aggregates[ai]) return;
+  projects[pi].aggregates[ai][field]=field==='qty'?parseInt(val)||1:val;
+  saveProjects(projects);
+}
+
+function delAggr(pi,ai){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  projects[pi].aggregates.splice(ai,1);
+  saveProjects(projects);
+  renderRegistry();
+}
+
+function saveProjectAggr(pi){
+  var projects=loadProjects();
+  if(!projects[pi]) return;
+  // Read current values from DOM
+  var tbody=document.getElementById('aggrBody'+pi);
+  if(tbody){
+    var rows=tbody.querySelectorAll('tr');
+    rows.forEach(function(row,ai){
+      if(!projects[pi].aggregates[ai]) return;
+      var inputs=row.querySelectorAll('input,select');
+      if(inputs[0]) projects[pi].aggregates[ai].type=inputs[0].value;
+      if(inputs[1]) projects[pi].aggregates[ai].serial=inputs[1].value;
+      if(inputs[2]) projects[pi].aggregates[ai].qty=parseInt(inputs[2].value)||1;
+      if(inputs[3]) projects[pi].aggregates[ai].workStatus=inputs[3].value;
+      if(inputs[4]) projects[pi].aggregates[ai].note=inputs[4].value;
+    });
+  }
+  saveProjects(projects);
+  var btn=document.querySelector('#regCard'+pi+' .reg-save-btn');
+  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){btn.textContent='Зберегти';btn.style.background='';},2000);}
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+init();
+</script>
+</body>
+</html>
