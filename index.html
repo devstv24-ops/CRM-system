@@ -1499,6 +1499,84 @@ function saveProjectAggr(pi){
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 
+function setCfCur(c){
+  cfCur=c;
+  var usd=document.getElementById('cfCurUSD');
+  var aed=document.getElementById('cfCurAED');
+  if(usd) usd.classList.toggle('active',c==='USD');
+  if(aed) aed.classList.toggle('active',c==='AED');
+}
+var cfCur='AED';
+
+function updateCfStatus(){
+  var type=document.getElementById('cfType').value;
+  var stEl=document.getElementById('cfStatus');
+  if(!stEl) return;
+  if(type==='income'){
+    stEl.innerHTML='<option value="plan">📋 План</option><option value="confirmed">🟡 Підтверджено</option><option value="received">✅ Отримано</option>';
+  } else {
+    stEl.innerHTML='<option value="plan">📋 План</option><option value="topay">🔴 До оплати</option><option value="paid">✅ Оплачено</option><option value="confirmed">🟡 Підтверджено</option>';
+  }
+}
+
+function openCfModal(date, type){
+  cfEditId=null;
+  var dateEl=document.getElementById('cfDate');
+  var typeEl=document.getElementById('cfType');
+  var descEl=document.getElementById('cfDesc');
+  var amtEl=document.getElementById('cfAmount');
+  var actEl=document.getElementById('cfActual');
+  var noteEl=document.getElementById('cfNote');
+  var critEl=document.getElementById('cfCritical');
+  var titleEl=document.querySelector('.cf-mtitle');
+  if(titleEl) titleEl.textContent='Нова транзакція';
+  if(dateEl) dateEl.value=date||new Date().toISOString().slice(0,10);
+  if(typeEl){ typeEl.value=type||'expense-opex'; }
+  if(descEl) descEl.value='';
+  if(amtEl) amtEl.value='';
+  if(actEl) actEl.value='';
+  if(noteEl) noteEl.value='';
+  if(critEl) critEl.checked=false;
+  setCfCur('AED');
+  updateCfStatus();
+  var overlay=document.getElementById('cfOverlay');
+  if(overlay) overlay.classList.add('open');
+  setTimeout(function(){ if(descEl) descEl.focus(); },100);
+}
+
+function closeCfModal(){
+  var overlay=document.getElementById('cfOverlay');
+  if(overlay) overlay.classList.remove('open');
+  cfEditId=null;
+}
+
+function saveCfTx(){
+  var date=document.getElementById('cfDate').value;
+  var type=document.getElementById('cfType').value;
+  var group=document.getElementById('cfGroup').value;
+  var catEl=document.getElementById('cfCategory');
+  var category=catEl?catEl.value:'';
+  var desc=document.getElementById('cfDesc').value.trim();
+  var amount=parseFloat(document.getElementById('cfAmount').value)||0;
+  var actual=parseFloat(document.getElementById('cfActual').value)||0;
+  var note=document.getElementById('cfNote').value.trim();
+  var critical=document.getElementById('cfCritical').checked;
+  var stEl=document.getElementById('cfStatus');
+  var status=stEl?stEl.value:'plan';
+  if(!date||!desc||!amount){alert('Заповніть: дата, опис, сума');return;}
+  if(cfEditId!==null){
+    var idx=cfTxs.findIndex(function(t){return t.id===cfEditId;});
+    if(idx>=0){
+      cfTxs[idx]=Object.assign(cfTxs[idx],{date:date,type:type,group:group,category:category,desc:desc,amount:amount,actual:actual||undefined,note:note,critical:critical,status:status,currency:cfCur});
+    }
+  } else {
+    cfTxs.push({id:Date.now().toString()+Math.random().toString(36).slice(2),date:date,type:type,group:group,category:category,desc:desc,amount:amount,actual:actual||undefined,note:note,critical:critical,status:status,currency:cfCur,created:new Date().toISOString()});
+  }
+  saveCfLocal();
+  closeCfModal();
+  renderCF();
+}
+
 init();
 </script>
 </body>
