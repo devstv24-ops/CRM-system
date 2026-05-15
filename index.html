@@ -1252,29 +1252,30 @@ function renderCfTx(t){
   var statusLbl={plan:'\u041f\u043b\u0430\u043d',topay:'\u0414\u043e \u043e\u043f\u043b\u0430\u0442\u0438',paid:'\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u043e',confirmed:'\u041f\u0456\u0434\u0442\u0432.',received:'\u041e\u0442\u0440\u0438\u043c\u0430\u043d\u043e'};
   var st=t.status||'plan';
   var txId=t.id;
+  var safeId=String(txId).replace(/['\\\/]/g,'_');
   var statusHtml=!isCrm
-    ?('<button class="cf-tx-status '+statusMap[st]+'" onclick="cycleCfStatus('+JSON.stringify(txId)+');event.stopPropagation()">'+statusLbl[st]+'</button>')
+    ?('<button class="cf-tx-status '+statusMap[st]+'" onclick="cycleCfStatus('+"'"+safeId+"'"+');event.stopPropagation()">'+statusLbl[st]+'</button>')
     :'<span class="cf-tx-status status-confirm">CRM</span>';
 
   // Fact button
   var factLabel=t.actual?('\u2713 '+fmtAED(toAED(t.actual,t.currency||'AED'))):'+ \u0444\u0430\u043a\u0442';
   var factBtn=!isCrm
-    ?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQuickActual('+JSON.stringify(txId)+',event);event.stopPropagation()">'+factLabel+'</button>')
+    ?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQuickActual('+"'"+safeId+"'"+',event);event.stopPropagation()">'+factLabel+'</button>')
     :'<span></span>';
 
   // Critical toggle - show \u1f6a8 icon
   var critHtml=!isCrm
-    ?('<div class="cf-tx-critical'+(t.critical?' on':'')+'" onclick="toggleCfCritical('+JSON.stringify(txId)+');event.stopPropagation()" title="\u041a\u0440\u0438\u0442\u0438\u0447\u043d\u0438\u0439 \u043f\u043b\u0430\u0442\u0456\u0436">'+(t.critical?'\u1f6a8':'\u2610')+'</div>')
+    ?('<div class="cf-tx-critical'+(t.critical?' on':'')+'" onclick="toggleCfCritical('+"'"+safeId+"'"+');event.stopPropagation()" title="\u041a\u0440\u0438\u0442\u0438\u0447\u043d\u0438\u0439 \u043f\u043b\u0430\u0442\u0456\u0436">'+(t.critical?'\u1f6a8':'\u2610')+'</div>')
     :'<span></span>';
 
   // Edit button
   var editBtn=!isCrm
-    ?('<button class="cf-del" onclick="editCfTx('+JSON.stringify(txId)+');event.stopPropagation()" title="\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u0442\u0438">\u270e</button>')
+    ?('<button class="cf-del" onclick="editCfTx('+"'"+safeId+"'"+');event.stopPropagation()" title="\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u0442\u0438">\u270e</button>')
     :'<span></span>';
 
   // Delete button
   var delBtn=!isCrm
-    ?('<button class="cf-del" onclick="delCfTx('+JSON.stringify(txId)+');event.stopPropagation()">\u2715</button>')
+    ?('<button class="cf-del" onclick="delCfTx('+"'"+safeId+"'"+');event.stopPropagation()">\u2715</button>')
     :'<span></span>';
 
   // Variance
