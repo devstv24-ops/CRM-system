@@ -788,6 +788,47 @@ var cfMonth='all';
 var cfEditId=null;
 var minSafeBalance=localStorage.getItem("cf_min_safe")?parseFloat(localStorage.getItem("cf_min_safe")):50000;
 
+var quickActualTxId=null;
+
+function openQuickActual(txId,event){
+  if(event){event.stopPropagation();event.preventDefault();}
+  var tx=cfTxs.find(function(t){return t.id===txId;});
+  if(!tx)return;
+  quickActualTxId=txId;
+  var popup=document.getElementById('quickActualPopup');
+  var desc=document.getElementById('quickActualDesc');
+  var input=document.getElementById('quickActualInput');
+  if(!popup||!input)return;
+  desc.textContent=(tx.category||tx.desc||'—')+' | Плановано: '+fmtCur(parseFloat(tx.amount)||0,tx.currency||'AED');
+  input.value=tx.actual||'';
+  input.placeholder='Факт у '+(tx.currency||'AED');
+  var x=event&&event.clientX?Math.min(event.clientX,window.innerWidth-260):window.innerWidth/2-120;
+  var y=event&&event.clientY?event.clientY+window.scrollY+10:window.scrollY+200;
+  popup.style.left=x+'px';popup.style.top=y+'px';popup.style.display='block';
+  setTimeout(function(){if(input){input.focus();input.select();}},80);
+}
+function saveQuickActual(){
+  if(!quickActualTxId)return;
+  var val=parseFloat(document.getElementById('quickActualInput').value);
+  if(isNaN(val)||val<0){alert('Введіть коректну суму');return;}
+  var tx=cfTxs.find(function(t){return t.id===quickActualTxId;});
+  if(tx){
+    tx.actual=val;
+    if(tx.type==='income'&&tx.status==='plan') tx.status='received';
+    else if(tx.type!=='income'&&tx.status==='plan') tx.status='paid';
+    saveCfLocal();
+  }
+  closeQuickActual();
+  renderCF();
+}
+
+function closeQuickActual(){
+  var p=document.getElementById('quickActualPopup');
+  if(p) p.style.display='none';
+  quickActualTxId=null;
+}
+
+
 function init(){
   if(HARDCODED_URL&&HARDCODED_URL.indexOf('script.google.com')>-1){scriptUrl=HARDCODED_URL;localStorage.setItem(URLKEY,HARDCODED_URL);}
   loadCfLocal();
