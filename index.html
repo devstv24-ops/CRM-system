@@ -880,8 +880,9 @@ function renderCF(){
 
   /* Category breakdown for donuts */
   var catOut={};var catIn=0;
+  var today2=new Date();today2.setHours(0,0,0,0);
   allTxs.forEach(function(t){
-    var aed=txAED(t);
+    var aed=t.actual?parseFloat(t.actual):txAED(t);
     if(t.type==='income'){catIn+=aed;}
     else{var cat=t.category||t.type||'\u0406\u043d\u0448\u0435';catOut[cat]=(catOut[cat]||0)+aed;}
   });
@@ -908,6 +909,7 @@ function renderCF(){
     +'<div class="cf-donut-card"><div class="cf-donut-title">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f vs \u0412\u0438\u0442\u0440\u0430\u0442\u0438</div><div class="donut-wrap"><canvas class="donut" id="donutInOut"></canvas><div class="donut-legend"><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--teal)"></span>\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f</span><span class="donut-leg-val">'+fmtAED(catIn)+'</span></div><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--red)"></span>\u0412\u0438\u0442\u0440\u0430\u0442\u0438</span><span class="donut-leg-val">'+fmtAED(Object.values(catOut).reduce(function(a,v){return a+v;},0))+'</span></div></div></div></div>'
     +'</div>'
     +generateCapexOpex(allTxs)
+    +generateBalanceForecastTable(allTxs,bank0)
     +'<div class="cf-weeks">';
 
   weekData.forEach(function(wd){
@@ -976,6 +978,51 @@ function saveQA(){
 }
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&qaCurrentId)saveQA();if(e.key==='Escape'&&qaCurrentId)closeQA();});
 
+
+function generateBalanceForecastTable(allTxs,bankNow){
+  var months=['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+  var mN={'2026-05':'Трав','2026-06':'Черв','2026-07':'Лип','2026-08':'Серп','2026-09':'Вер','2026-10':'Жовт','2026-11':'Лист','2026-12':'Груд'};
+  var today=new Date();today.setHours(0,0,0,0);
+  var run=bankNow,rows='';
+  months.forEach(function(ym){
+    var yr=parseInt(ym.split('-')[0]),mo=parseInt(ym.split('-')[1]);
+    var sD=new Date(yr,mo-1,1),eD=new Date(yr,mo,0,23,59,59,999);
+    var mIn=0,mOut=0;
+    allTxs.forEach(function(t){
+      if(!t.date)return;
+      var td=new Date(t.date);
+      if(td<sD||td>eD)return;
+      if(isSettled(t))return;
+      if(td<today)return;
+      var aed=t.actual?parseFloat(t.actual):txAED(t);
+      if(t.type==='income')mIn+=aed; else mOut+=aed;
+    });
+    var s=run; run+=mIn-mOut;
+    var c=run>=minSafeBalance?'var(--green)':'var(--red)';
+    var g=run<minSafeBalance?'<span style="color:var(--red)"> ⚠</span>':'' ;
+    rows+='<tr>'
+      +'<td style="padding:8px 14px;font-weight:600;border-bottom:1px solid var(--border)">'+mN[ym]+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--mono);color:var(--text3);border-bottom:1px solid var(--border)">'+fmtAED(s)+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--mono);color:var(--teal);border-bottom:1px solid var(--border)">'+( mIn>0?'+'+fmtAED(mIn):'—')+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--mono);color:var(--red);border-bottom:1px solid var(--border)">'+( mOut>0?'−'+fmtAED(mOut):'—')+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--mono);font-weight:700;color:'+c+';border-bottom:1px solid var(--border)">'+fmtAED(run)+g+'</td>'
+      +'</tr>';
+  });
+  var bstyle='padding:8px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border-bottom:2px solid var(--border)';
+  return '<div class="cf-chart-card">'
+    +'<div class="cf-chart-hd"><span class="cf-chart-title">Прогноз залишку по місяцях (неоплачені транзакції)</span></div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
+    +'<thead><tr style="background:var(--surface2)">'
+    +'<th style="'+bstyle+';color:var(--text3)">Місяць</th>'
+    +'<th style="'+bstyle+';color:var(--text3)">Початок</th>'
+    +'<th style="'+bstyle+';color:var(--teal)">Надходження</th>'
+    +'<th style="'+bstyle+';color:var(--red)">Витрати</th>'
+    +'<th style="'+bstyle+';color:var(--text3)">Залишок</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:8px">Банк зараз: '+fmtAED(bankNow)+'. Тільки майбутні неоплачені/неотримані.</div>'
+    +'</div>';
+}
 function generateCapexOpex(allTxs){
   var capexCats={};var opexCats={};
   var capexTotal=0;var opexTotal=0;
