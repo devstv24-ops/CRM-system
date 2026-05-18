@@ -806,19 +806,42 @@ function setBankManual(){
 function renderCF(){
   var el=document.getElementById('cfContent');
   var crmPays=getCrmPays();var allTxs=cfTxs.concat(crmPays);
-  var WPAST=2,WFUT=16;var startBal=bankAED!==null?bankAED:0;
-  var pastNet=0;
-  for(var pw=-WPAST;pw<0;pw++){var wb=getWeekBounds(pw);allTxs.forEach(function(t){if(!t.date)return;var td=new Date(t.date);if(td<wb.start||td>wb.end)return;var aed=txAED(t);if(t.type==='income')pastNet+=aed;else pastNet-=aed;});}
-  var running=startBal-pastNet;var totalIn4=0,totalOut4=0;var weekData=[];
+  var WPAST=2,WFUT=16;var bank=bankAED!==null?bankAED:0;
+  // Build week data first to calculate net per week
+  var totalIn4=0,totalOut4=0;var weekData=[];
+  // Calculate net for each week
+  var weekNets=[];
   for(var w=-WPAST;w<WFUT;w++){
     var bounds=getWeekBounds(w);
     var wTxs=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);if(cfMonth!=='all'&&t.date.slice(0,7)!==cfMonth)return false;return td>=bounds.start&&td<=bounds.end;});
     var wTxsAll=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);return td>=bounds.start&&td<=bounds.end;});
     var wIn=0,wOut=0,wDebt=0;
     wTxsAll.forEach(function(t){var aed=t.actual?parseFloat(t.actual):txAED(t);if(t.type==='income')wIn+=aed;else if(t.type==='debt')wDebt+=aed;else wOut+=aed;});
-    if(w>=0&&w<4){totalIn4+=wIn;totalOut4+=wOut+wDebt;}
-    var balStart=running;running+=wIn-wOut-wDebt;
-    weekData.push({w:w,start:bounds.start,end:bounds.end,txs:wTxs,wIn:wIn,wOut:wOut,wDebt:wDebt,balStart:balStart,balance:running,isPast:w<0});
+    weekNets.push({w:w,wIn:wIn,wOut:wOut,wDebt:wDebt,wNet:wIn-wOut-wDebt,bounds:bounds,wTxs:wTxs,wTxsAll:wTxsAll});
+  }
+  // bank = today's balance = end of current week (w=0) so far
+  // To find balance at START of current week: subtract today's transactions
+  // Actually bank is the running balance RIGHT NOW (today)
+  // So balance at end of week 0 = bank + remaining planned (future days of week)
+  // Simplest correct approach: bank is the starting point for week 0
+  // Past weeks are reconstructed backwards
+  var currentWeekIdx=WPAST; // index of w=0 in weekNets
+  // running forward from bank (start of current week = bank)
+  var running=bank;
+  for(var i=currentWeekIdx;i<weekNets.length;i++){
+    var wd=weekNets[i];
+    var balStart=running;
+    running+=wd.wNet;
+    if(wd.w>=0&&wd.w<4){totalIn4+=wd.wIn;totalOut4+=wd.wOut+wd.wDebt;}
+    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,wIn:wd.wIn,wOut:wd.wOut,wDebt:wd.wDebt,balStart:balStart,balance:running,isPast:false};
+  }
+  // Reconstruct past weeks backwards from bank
+  running=bank;
+  for(var i=currentWeekIdx-1;i>=0;i--){
+    var wd=weekNets[i];
+    running-=wd.wNet; // reverse: subtract this week's net to get balance at start
+    var balStart=running;
+    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,wIn:wd.wIn,wOut:wd.wOut,wDebt:wd.wDebt,balStart:balStart,balance:balStart+wd.wNet,isPast:true};
   }
   var bank0=bankAED!==null?bankAED:0;var net4=bank0+totalIn4-totalOut4;var months=getCfMonths();
   var monthBtns='<button class="cf-mbtn'+(cfMonth==='all'?' active':'')+"\" onclick=\"setCfMonth('all')\">\u0412\u0441\u0456</button>";
