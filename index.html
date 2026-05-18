@@ -899,8 +899,11 @@ function openQA(id){
   if(!tx)return;
   qaCurrentId=id;
   document.getElementById('qaTitle').textContent='\u0424\u0430\u043a\u0442: '+((tx.category||tx.desc||'').substring(0,40));
-  document.getElementById('qaDesc').textContent='\u041f\u043b\u0430\u043d\u043e\u0432\u0430 \u0441\u0443\u043c\u0430: '+fmtCur(tx.amount,tx.currency||'AED')+(tx.actual?' | \u041f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 \u0444\u0430\u043a\u0442: '+fmtCur(tx.actual,tx.currency||'AED'):'');
-  document.getElementById('qaInput').value=tx.actual||tx.amount||'';
+  var planAed=toAED(tx.amount,tx.currency||'AED');
+  document.getElementById('qaDesc').textContent='\u041f\u043b\u0430\u043d (AED): '+fmtAED(planAed)+(tx.actual?' | \u0424\u0430\u043a\u0442 (AED): '+fmtAED(parseFloat(tx.actual)):'')+'  \u2190 \u0432\u0432\u043e\u0434\u0438\u0442\u044c \u0432 AED';
+  // Pre-fill with actual (AED) if exists, else plan converted to AED
+  var prefill=tx.actual?parseFloat(tx.actual):toAED(tx.amount,tx.currency||'AED');
+  document.getElementById('qaInput').value=prefill||'';
   document.getElementById('qaOverlay').classList.add('open');
   setTimeout(function(){var inp=document.getElementById('qaInput');inp.focus();inp.select();},100);
 }
@@ -1244,7 +1247,7 @@ function renderCfTx(t){
   var isCrm=t.source==='crm';
 
   // Use actual amount if available
-  var actualAed=t.actual?toAED(t.actual,t.currency||'AED'):null;
+  var actualAed=t.actual?parseFloat(t.actual):null; // actual always stored in AED
   var displayAed=actualAed!==null?actualAed:aed;
   // variance: positive = saved (expense less than plan), negative = overspent
   var isIncomeTx=(t.type==='income');
@@ -1261,7 +1264,7 @@ function renderCfTx(t){
     :'<span class="cf-tx-status status-confirm">CRM</span>';
 
   // Fact button
-  var factLabel=t.actual?('\u2713 '+fmtAED(toAED(t.actual,t.currency||'AED'))):'+ \u0444\u0430\u043a\u0442';
+  var factLabel=t.actual?('\u2713 '+fmtAED(parseFloat(t.actual))):'+ \u0444\u0430\u043a\u0442';
   var factBtn=!isCrm
     ?('<button class="cf-fact-btn'+(t.actual?' has-actual':'')+'" onclick="openQA(\'' + safeId + '\');event.stopPropagation()">'+factLabel+'</button>')
     :'<span></span>';
