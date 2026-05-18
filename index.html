@@ -992,7 +992,7 @@ function generateBalanceForecastTable(allTxs,bankNow){
       if(!t.date)return;
       var td=new Date(t.date);
       if(td<sD||td>eD)return;
-      if(isSettled(t))return;
+      if(t.status==='paid'||t.status==='received')return;
       if(td<today)return;
       var aed=t.actual?parseFloat(t.actual):txAED(t);
       if(t.type==='income')mIn+=aed; else mOut+=aed;
