@@ -812,7 +812,7 @@ function setBankManual(){
 }
 function renderCF(){
   var el=document.getElementById('cfContent');
-  var crmPays=getCrmPays();var allTxs=cfTxs.concat(crmPays);
+  var crmPays=getCrmAllPays();var allTxs=cfTxs.concat(crmPays);
   var WPAST=2,WFUT=16;var bank=bankAED!==null?bankAED:0;
   var today=new Date();today.setHours(0,0,0,0);
   var totalIn4=0,totalOut4=0;var weekData=[];
