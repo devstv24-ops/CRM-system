@@ -828,8 +828,11 @@ function renderCF(){
     var wTxsAll=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);return td>=bounds.start&&td<=bounds.end;});
     // For balance projection: only count pending (not yet settled)
     var wIn=0,wOut=0,wDebt=0;
+    var todayW=new Date();todayW.setHours(0,0,0,0);
     wTxsAll.forEach(function(t){
       if(isSettled(t)) return; // already in bank balance, skip
+      var td=new Date(t.date);
+      if(w===0&&td<todayW) return; // current week: skip past dates already in bank
       var aed=t.actual?parseFloat(t.actual):txAED(t);
       if(t.type==='income')wIn+=aed;
       else if(t.type==='debt')wDebt+=aed;
@@ -1194,12 +1197,15 @@ function getMonthlyForecast(allTxs, bankStart){
     var endD = new Date(yr, mo, 0, 23,59,59,999);
 
     var mIn=0, mOut=0;
+    var today=new Date();today.setHours(0,0,0,0);
     allTxs.forEach(function(t){
       if(!t.date) return;
       var td = new Date(t.date);
       if(td < startD || td > endD) return;
-      // Skip settled transactions (already in bank)
+      // Skip settled (already in bank balance)
       if(t.status==='paid'||t.status==='received') return;
+      // For current month: skip past dates (already reflected in bank or missed)
+      if(td < today) return;
       var aed=t.actual?parseFloat(t.actual):txAED(t);
       if(t.type==='income') mIn+=aed;
       else mOut+=aed;
