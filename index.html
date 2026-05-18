@@ -993,19 +993,8 @@ function openScenario(){
 function toggleScenarioTx(id,enabled){
   if(enabled) delete cfScenarioDisabled[id];
   else cfScenarioDisabled[id]=true;
-  var today=new Date();today.setHours(0,0,0,0);
-  var allTxs=cfTxs.concat(getCrmAllPays());
-  var total=0;
-  allTxs.forEach(function(t){
-    if(t.type!=='income'||t.status==='paid'||t.status==='received')return;
-    if(!t.date||new Date(t.date)<today)return;
-    var sid=String(t.id).replace(/[<>'"]/g,'_');
-    if(!cfScenarioDisabled[sid]) total+=(t.actual?parseFloat(t.actual):txAED(t));
-  });
-  var el=document.getElementById('scenarioTotal');
-  if(el) el.textContent='+'+fmtAED(total);
   renderCF();
-  setTimeout(openScenario, 80);
+  setTimeout(openScenario,100);
 }
 function resetScenario(){
   cfScenarioDisabled={};
