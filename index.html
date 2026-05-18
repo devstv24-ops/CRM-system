@@ -871,7 +871,7 @@ function renderCF(){
       wIn:wd.wInAll,wOut:wd.wOutAll,wDebt:wd.wDebtAll,
       balStart:balStart,balance:balStart+pastNet,isPast:true};
   }
-  var bank0=bankAED!==null?bankAED:0;var net4=bank0+totalIn4-totalOut4;var months=getCfMonths();
+  var bank0=bankAED!==null?bankAED:0;var net4=weekData[WPAST+3]?weekData[WPAST+3].balance:bank0;var months=getCfMonths();
   var monthBtns='<button class="cf-mbtn'+(cfMonth==='all'?' active':'')+"\" onclick=\"setCfMonth('all')\">\u0412\u0441\u0456</button>";
   months.forEach(function(m){var lbl=new Date(m+'-01').toLocaleDateString('uk',{month:'short',year:'2-digit'});monthBtns+='<button class="cf-mbtn'+(cfMonth===m?' active':'')+"\" onclick=\"setCfMonth('"+m+"')\">"+lbl+'</button>';});
 
@@ -1164,7 +1164,7 @@ function generateExtKPIs(allTxs,bankNow,weekData){
 
   // Cash Gap Date - first week where balance goes negative
   var gapWeek=null;
-  weekData.forEach(function(wd){if(!wd.isPast&&wd.balance<0&&!gapWeek)gapWeek=wd;});
+  weekData.forEach(function(wd){if(!wd.isPast&&wd.balance<minSafeBalance&&!gapWeek)gapWeek=wd;});
   var gapTxt=gapWeek?fmtShort(gapWeek.start)+' \u2013 '+fmtShort(gapWeek.end):'\u041d\u0435 \u0432\u0438\u044f\u0432\u043b\u0435\u043d\u043e';
   var gapColor=gapWeek?'var(--red)':'var(--green)';
 
@@ -1198,7 +1198,9 @@ function getMonthlyForecast(allTxs, bankStart){
       if(!t.date) return;
       var td = new Date(t.date);
       if(td < startD || td > endD) return;
-      var aed = txAED(t);
+      // Skip settled transactions (already in bank)
+      if(t.status==='paid'||t.status==='received') return;
+      var aed=t.actual?parseFloat(t.actual):txAED(t);
       if(t.type==='income') mIn+=aed;
       else mOut+=aed;
     });
@@ -1210,7 +1212,7 @@ function getMonthlyForecast(allTxs, bankStart){
       '2026-08':'\u0421\u0435\u0440\u043f 26','2026-09':'\u0412\u0435\u0440 26','2026-10':'\u0416\u043e\u0432\u0442 26',
       '2026-11':'\u041b\u0438\u0441\u0442 26','2026-12':'\u0413\u0440\u0443\u0434 26'
     };
-    result.push({ym:ym, name:monthNames[ym]||ym, startBal:startBal, endBal:running, mIn:mIn, mOut:mOut, hasGap:running<0});
+    result.push({ym:ym, name:monthNames[ym]||ym, startBal:startBal, endBal:running, mIn:mIn, mOut:mOut, hasGap:running<minSafeBalance});
   });
   return result;
 }
@@ -1240,8 +1242,8 @@ function generateAdvisorHTML(weekData,bankNow,totalIn4,totalOut4,net4){
   // 1. Check for cash gaps week by week
   var firstGapWeek=null;var gapAmount=0;
   weekData.forEach(function(wd){
-    if(!wd.isPast&&wd.balance<0&&firstGapWeek===null){
-      firstGapWeek=wd;gapAmount=Math.abs(wd.balance);
+    if(!wd.isPast&&wd.balance<minSafeBalance&&firstGapWeek===null){
+      firstGapWeek=wd;gapAmount=minSafeBalance-wd.balance;
     }
   });
   if(firstGapWeek){
