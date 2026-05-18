@@ -815,7 +815,7 @@ function renderCF(){
     var wTxs=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);if(cfMonth!=='all'&&t.date.slice(0,7)!==cfMonth)return false;return td>=bounds.start&&td<=bounds.end;});
     var wTxsAll=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);return td>=bounds.start&&td<=bounds.end;});
     var wIn=0,wOut=0,wDebt=0;
-    wTxsAll.forEach(function(t){var aed=txAED(t);if(t.type==='income')wIn+=aed;else if(t.type==='debt')wDebt+=aed;else wOut+=aed;});
+    wTxsAll.forEach(function(t){var aed=t.actual?parseFloat(t.actual):txAED(t);if(t.type==='income')wIn+=aed;else if(t.type==='debt')wDebt+=aed;else wOut+=aed;});
     if(w>=0&&w<4){totalIn4+=wIn;totalOut4+=wOut+wDebt;}
     var balStart=running;running+=wIn-wOut-wDebt;
     weekData.push({w:w,start:bounds.start,end:bounds.end,txs:wTxs,wIn:wIn,wOut:wOut,wDebt:wDebt,balStart:balStart,balance:running,isPast:w<0});
@@ -1312,19 +1312,21 @@ function renderCfTx(t){
   if(t.critical) rowBg='background:#FFF5F5;border-color:#FECACA;';
   else if(st==='paid'||st==='received') rowBg='background:#F8FFF9;';
 
-  return '<div class="cf-tx" style="grid-template-columns:90px 1fr 100px 60px 70px 80px 60px 24px 24px 24px;'+rowBg+'">'
-    +'<span class="cf-tx-date">'+(t.date||'\u2014')+'</span>'
-    +'<span class="cf-tx-desc">'+esc(catTxt)+crmBadge+descTxt+'</span>'
-    +'<span class="cf-tx-amt '+tm[2]+'">'+sign+fmtAED(displayAed)+amtExtra+'</span>'
-    +'<span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'
-    +statusHtml
-    +factBtn
-    +varHtml
-    +critHtml
-    +editBtn
-    +delBtn
-    +dupBtn
-    +'</div>';
+  // Build combined amount cell: plan always shown, fact + diff if exists
+  var planTxt=sign+fmtAED(aed)+amtExtra;
+  var amtCell;
+  if(actualAed!==null){
+    var diffAbs=Math.abs(variance);
+    var diffPct=aed>0?Math.round(diffAbs/aed*100):0;
+    var diffColor=variance>0?'var(--green)':'var(--red)';
+    var diffLabel=variance>0?'\u2212'+fmtAED(diffAbs)+' \u0437\u0435\u043a.':'+'+fmtAED(diffAbs)+' \u043f\u0435\u0440.';
+    if(variance===0) { diffColor='var(--text3)'; diffLabel='\u2714 \u0440\u0456\u0432\u043d\u043e'; }
+    amtCell='<span class="cf-tx-amt '+tm[2]+'" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">'      +'<span style="font-size:10px;color:var(--text3);text-decoration:line-through">'+planTxt+'</span>'      +'<span style="font-size:12px;font-weight:700">'+sign+fmtAED(actualAed)+'</span>'      +'<span style="font-size:9px;color:'+diffColor+';font-family:var(--mono)">'+diffLabel+' '+diffPct+'%</span>'      +'</span>';
+  } else {
+    amtCell='<span class="cf-tx-amt '+tm[2]+'">'+planTxt+'</span>';
+  }
+
+  return '<div class="cf-tx" style="grid-template-columns:90px 1fr 130px 60px 70px 80px 24px 24px 24px 24px;'+rowBg+'">'    +'<span class="cf-tx-date">'+(t.date||'\u2014')+'</span>'    +'<span class="cf-tx-desc">'+esc(catTxt)+crmBadge+descTxt+'</span>'    +amtCell    +'<span class="cf-tx-badge '+tm[0]+'">'+tm[1]+'</span>'    +statusHtml    +factBtn    +critHtml    +editBtn    +delBtn    +dupBtn    +'</div>';
 }
 function cycleCfStatus(id){
   var tx=cfTxs.find(function(t){return t.id===id;});
