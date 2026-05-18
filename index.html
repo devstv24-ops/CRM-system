@@ -971,8 +971,7 @@ function openScenario(){
     var aed=t.actual?parseFloat(t.actual):txAED(t);
     var sid=String(t.id).replace(/[<>'"]/g,'_');
     var chk=!cfScenarioDisabled[sid];
-    var onch='toggleScenarioTx(\''+sid+'\',this.checked)';
-    return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 12px"><input type="checkbox" '+(chk?'checked':'')+' onchange="'+onch+'" style="width:16px;height:16px;cursor:pointer"></td><td style="padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--mono)">'+t.date+'</td><td style="padding:8px 12px;font-size:12px;font-weight:500">'+esc(t.desc||t.category||'')+'</td><td style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--teal);text-align:right">+'+fmtAED(aed)+'</td></tr>';
+    return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 12px"><input type="checkbox" data-sid="'+sid+'" '+(chk?'checked':'')+' class="scenario-chk" style="width:16px;height:16px;cursor:pointer"></td><td style="padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--mono)">'+t.date+'</td><td style="padding:8px 12px;font-size:12px;font-weight:500">'+esc(t.desc||t.category||'')+'</td><td style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--teal);text-align:right">+'+fmtAED(aed)+'</td></tr>';
   }).join('');
   if(!rows)rows='<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text3)">Немає майбутніх надходжень</td></tr>';
   var total=incomes.filter(function(t){var sid=String(t.id).replace(/[<>'"]/g,'_');return !cfScenarioDisabled[sid];}).reduce(function(s,t){return s+(t.actual?parseFloat(t.actual):txAED(t));},0);
@@ -980,6 +979,15 @@ function openScenario(){
   if(!ov){ov=document.createElement('div');ov.id='scenarioOverlay';ov.style.cssText='position:fixed;inset:0;z-index:350;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';document.body.appendChild(ov);}
   ov.innerHTML='<div style="background:var(--surface);border-radius:14px;width:560px;max-width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)"><div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px;font-weight:700;color:var(--accent2)">Сценарний аналіз — Надходження</span><button onclick="closeScenario()" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px">✕</button></div><div style="padding:8px 20px;background:var(--surface2);font-size:12px;color:var(--text2)">Зніміть галочку щоб вимкнути. Таблиця прогнозу перераховується автоматично.</div><div style="overflow-y:auto;flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--surface2)"><th style="padding:8px 12px;width:40px"></th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Дата</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Опис</th><th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase">Сума</th></tr></thead><tbody>'+rows+'</tbody></table></div><div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">Увімкнено: <strong id="scenarioTotal" style="font-family:var(--mono);color:var(--teal)">+'+fmtAED(total)+'</strong></span><div style="display:flex;gap:8px"><button onclick="resetScenario()" style="padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer">Скинути</button><button onclick="closeScenario()" style="padding:7px 14px;border-radius:var(--radius-sm);background:var(--accent2);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer">Застосувати</button></div></div></div>';
   ov.style.display='flex';
+  // Attach event listeners via delegation (inline onchange blocked by CSP)
+  setTimeout(function(){
+    var boxes=ov.querySelectorAll('.scenario-chk');
+    boxes.forEach(function(cb){
+      cb.addEventListener('change',function(){
+        toggleScenarioTx(this.getAttribute('data-sid'),this.checked);
+      });
+    });
+  },50);
 }
 function toggleScenarioTx(id,enabled){
   if(enabled) delete cfScenarioDisabled[id];
