@@ -807,41 +807,69 @@ function renderCF(){
   var el=document.getElementById('cfContent');
   var crmPays=getCrmPays();var allTxs=cfTxs.concat(crmPays);
   var WPAST=2,WFUT=16;var bank=bankAED!==null?bankAED:0;
-  // Build week data first to calculate net per week
+  var today=new Date();today.setHours(0,0,0,0);
   var totalIn4=0,totalOut4=0;var weekData=[];
-  // Calculate net for each week
+
+  // KEY LOGIC:
+  // bank = real balance RIGHT NOW (already includes all paid/received transactions)
+  // "settled" = paid or received (already in bank, do NOT count again)
+  // "pending" = plan/topay/confirmed (not yet in bank, count as future)
+  //
+  // For current+future weeks: only count PENDING transactions (not yet settled)
+  // For past weeks: show for reference but balance chain starts from bank today
+
+  function isSettled(t){return t.status==='paid'||t.status==='received';}
+
+  // Build week nets - only PENDING transactions affect future balance
   var weekNets=[];
   for(var w=-WPAST;w<WFUT;w++){
     var bounds=getWeekBounds(w);
     var wTxs=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);if(cfMonth!=='all'&&t.date.slice(0,7)!==cfMonth)return false;return td>=bounds.start&&td<=bounds.end;});
     var wTxsAll=allTxs.filter(function(t){if(!t.date)return false;var td=new Date(t.date);return td>=bounds.start&&td<=bounds.end;});
+    // For balance projection: only count pending (not yet settled)
     var wIn=0,wOut=0,wDebt=0;
-    wTxsAll.forEach(function(t){var aed=t.actual?parseFloat(t.actual):txAED(t);if(t.type==='income')wIn+=aed;else if(t.type==='debt')wDebt+=aed;else wOut+=aed;});
-    weekNets.push({w:w,wIn:wIn,wOut:wOut,wDebt:wDebt,wNet:wIn-wOut-wDebt,bounds:bounds,wTxs:wTxs,wTxsAll:wTxsAll});
+    wTxsAll.forEach(function(t){
+      if(isSettled(t)) return; // already in bank balance, skip
+      var aed=t.actual?parseFloat(t.actual):txAED(t);
+      if(t.type==='income')wIn+=aed;
+      else if(t.type==='debt')wDebt+=aed;
+      else wOut+=aed;
+    });
+    // For display totals in week header: show all (including settled) for context
+    var wInAll=0,wOutAll=0,wDebtAll=0;
+    wTxsAll.forEach(function(t){
+      var aed=t.actual?parseFloat(t.actual):txAED(t);
+      if(t.type==='income')wInAll+=aed;
+      else if(t.type==='debt')wDebtAll+=aed;
+      else wOutAll+=aed;
+    });
+    weekNets.push({w:w,wIn:wIn,wOut:wOut,wDebt:wDebt,wNet:wIn-wOut-wDebt,
+      wInAll:wInAll,wOutAll:wOutAll,wDebtAll:wDebtAll,
+      bounds:bounds,wTxs:wTxs,wTxsAll:wTxsAll});
   }
-  // bank = today's balance = end of current week (w=0) so far
-  // To find balance at START of current week: subtract today's transactions
-  // Actually bank is the running balance RIGHT NOW (today)
-  // So balance at end of week 0 = bank + remaining planned (future days of week)
-  // Simplest correct approach: bank is the starting point for week 0
-  // Past weeks are reconstructed backwards
-  var currentWeekIdx=WPAST; // index of w=0 in weekNets
-  // running forward from bank (start of current week = bank)
-  var running=bank;
+
+  var currentWeekIdx=WPAST;
+  var running=bank; // start from real bank balance today
   for(var i=currentWeekIdx;i<weekNets.length;i++){
     var wd=weekNets[i];
     var balStart=running;
-    running+=wd.wNet;
+    running+=wd.wNet; // add only pending
     if(wd.w>=0&&wd.w<4){totalIn4+=wd.wIn;totalOut4+=wd.wOut+wd.wDebt;}
-    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,wIn:wd.wIn,wOut:wd.wOut,wDebt:wd.wDebt,balStart:balStart,balance:running,isPast:false};
+    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,
+      wIn:wd.wInAll,wOut:wd.wOutAll,wDebt:wd.wDebtAll,
+      balStart:balStart,balance:running,isPast:false};
   }
-  // Reconstruct past weeks backwards from bank
+  // Past weeks: reconstruct backwards (informational only)
   running=bank;
   for(var i=currentWeekIdx-1;i>=0;i--){
     var wd=weekNets[i];
-    running-=wd.wNet; // reverse: subtract this week's net to get balance at start
+    // For past: reverse total (including settled) to show historical balance
+    var pastNet=wd.wInAll-wd.wOutAll-wd.wDebtAll;
+    running-=pastNet;
     var balStart=running;
-    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,wIn:wd.wIn,wOut:wd.wOut,wDebt:wd.wDebt,balStart:balStart,balance:balStart+wd.wNet,isPast:true};
+    weekData[i]={w:wd.w,start:wd.bounds.start,end:wd.bounds.end,txs:wd.wTxs,
+      wIn:wd.wInAll,wOut:wd.wOutAll,wDebt:wd.wDebtAll,
+      balStart:balStart,balance:balStart+pastNet,isPast:true};
   }
   var bank0=bankAED!==null?bankAED:0;var net4=bank0+totalIn4-totalOut4;var months=getCfMonths();
   var monthBtns='<button class="cf-mbtn'+(cfMonth==='all'?' active':'')+"\" onclick=\"setCfMonth('all')\">\u0412\u0441\u0456</button>";
