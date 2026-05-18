@@ -841,8 +841,10 @@ function renderCF(){
       var td=new Date(t.date);
       if(w===0&&td<todayW) return; // current week: skip past dates already in bank
       var aed=t.actual?parseFloat(t.actual):txAED(t);
-      if(t.type==='income')wIn+=aed;
-      else if(t.type==='debt')wDebt+=aed;
+      if(t.type==='income'){
+        var _sid=String(t.id).replace(/[<>'"]/g,'_');
+        if(!cfScenarioDisabled[t.id]&&!cfScenarioDisabled[_sid]) wIn+=aed;
+      } else if(t.type==='debt')wDebt+=aed;
       else wOut+=aed;
     });
     // For display totals in week header: show all (including settled) for context
