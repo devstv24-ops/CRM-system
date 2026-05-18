@@ -910,7 +910,6 @@ function renderCF(){
     +generateExtKPIs(allTxs,bank0,weekData)
     +generateAdvisorHTML(weekData,bank0,totalIn4,totalOut4,net4)
     +'<div class="cf-chart-card"><div class="cf-chart-hd"><span class="cf-chart-title">\u0411\u0430\u043b\u0430\u043d\u0441 \u043f\u043e \u0442\u0438\u0436\u043d\u044f\u0445 (AED)</span><div class="cf-legend"><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--teal)"></span>\u0417\u0430\u043b\u0438\u0448\u043e\u043a</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--accent)"></span>\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f</span><span class="cf-leg"><span class="cf-leg-dot" style="background:var(--red)"></span>\u0412\u0438\u0442\u0440\u0430\u0442\u0438</span></div></div><canvas id="cfChart" style="height:160px"></canvas></div>'
-    +generateBreakdownCard(allTxs)
     +'<div class="cf-charts-row">'
     +'<div class="cf-donut-card"><div class="cf-donut-title">\u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430 \u0432\u0438\u0442\u0440\u0430\u0442</div><div class="donut-wrap"><canvas class="donut" id="donutOut"></canvas><div class="donut-legend">'
     +catOutSorted.map(function(c,i){return '<div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:'+DONUT_COLORS[i]+'"></span>'+esc(c.k.split(' ').slice(0,3).join(' '))+'</span><span class="donut-leg-val">'+fmtAED(c.v)+'</span></div>';}).join('')
@@ -918,8 +917,7 @@ function renderCF(){
     +'<div class="cf-donut-card"><div class="cf-donut-title">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f vs \u0412\u0438\u0442\u0440\u0430\u0442\u0438</div><div class="donut-wrap"><canvas class="donut" id="donutInOut"></canvas><div class="donut-legend"><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--teal)"></span>\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f</span><span class="donut-leg-val">'+fmtAED(catIn)+'</span></div><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--red)"></span>\u0412\u0438\u0442\u0440\u0430\u0442\u0438</span><span class="donut-leg-val">'+fmtAED(Object.values(catOut).reduce(function(a,v){return a+v;},0))+'</span></div></div></div></div>'
     +'</div>'
     +generateCapexOpex(allTxs)
-    +generatePaidByCategory(allTxs)
-
+    +'<div id="forecastTableWrap">'+generateBalanceForecastTable(allTxs,bank0)+'</div>'
     +'<div class="cf-weeks">';
 
   weekData.forEach(function(wd){
@@ -1007,8 +1005,7 @@ function toggleScenarioTx(id,enabled){
   var el=document.getElementById('scenarioTotal');
   if(el) el.textContent='+'+fmtAED(total);
   renderCF();
-  // Reopen scenario panel after renderCF
-  setTimeout(openScenario, 50);
+  setTimeout(openScenario, 80);
 }
 function resetScenario(){
   cfScenarioDisabled={};
@@ -1094,30 +1091,6 @@ function generateBalanceForecastTable(allTxs,bankNow){
     +'<div style="font-size:11px;color:var(--text3);margin-top:8px">Банк зараз: '+fmtAED(bankNow)+'. Тільки майбутні неоплачені/неотримані.</div>'
     +'</div>';
 }
-function generatePaidByCategory(allTxs){
-  // Only paid/received expense transactions
-  var cats={};
-  var total=0;
-  allTxs.forEach(function(t){
-    if(t.type==='income')return;
-    if(t.status!=='paid'&&t.status!=='received'&&t.status!=='oplaceno')return;
-    if(t.source==='crm')return;
-    var aed=t.actual?parseFloat(t.actual):txAED(t);
-    var cat=t.category||t.group||'Інше';
-    cats[cat]=(cats[cat]||0)+aed;
-    total+=aed;
-  });
-  if(total===0) return '';
-  var sorted=Object.keys(cats).map(function(k){return{k:k,v:cats[k]};}).sort(function(a,b){return b.v-a.v;});
-  var COLORS=['#2563EB','#7C3AED','#059669','#D97706','#DC2626','#0D9488','#EA580C','#0891B2','#65A30D','#9333EA'];
-  var rows=sorted.map(function(c,i){
-    var pct=Math.round(c.v/total*100);
-    var color=COLORS[i%COLORS.length];
-    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">'      +'<div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:'+color+'"></div>'      +'<div style="flex:1;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.k+'</div>'      +'<div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);min-width:100px;text-align:right">'+fmtAED(c.v)+'</div>'      +'<div style="width:60px;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;flex-shrink:0">'        +'<div style="height:100%;border-radius:3px;background:'+color+';width:'+pct+'%"></div>'      +'</div>'      +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono);min-width:32px;text-align:right">'+pct+'%</div>'      +'</div>';
-  }).join('');
-  return '<div class="cf-chart-card">'    +'<div class="cf-chart-hd"><span class="cf-chart-title">Фактичні витрати по категоріям (оплачені)</span>'    +'<span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--red)">−'+fmtAED(total)+'</span></div>'    +'<div>'+rows+'</div>'    +'</div>';
-}
-
 function generateCapexOpex(allTxs){
   var capexCats={};var opexCats={};
   var capexTotal=0;var opexTotal=0;
