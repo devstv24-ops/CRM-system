@@ -995,8 +995,10 @@ function toggleScenarioTx(id,enabled){
   });
   var el=document.getElementById('scenarioTotal');
   if(el) el.textContent='+'+fmtAED(total);
-  var fc=document.getElementById('forecastTableWrap');
-  if(fc) fc.innerHTML=generateBalanceForecastTable(allTxs,bankAED||0);
+  setTimeout(function(){
+    var fc=document.getElementById('forecastTableWrap');
+    if(fc) fc.innerHTML=generateBalanceForecastTable(cfTxs.concat(getCrmAllPays()),bankAED||0);
+  },0);
 }
 function resetScenario(){
   cfScenarioDisabled={};
