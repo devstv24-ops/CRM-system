@@ -312,6 +312,7 @@ var cfCur='AED';
 var filter='all';
 var scriptUrl=localStorage.getItem(URLKEY)||'';
 var cfMonth='all';
+var cfOpenWeeks=new Set([0]); // week 0 = current week open by default
 var cfEditId=null;
 var minSafeBalance=localStorage.getItem("cf_min_safe")?parseFloat(localStorage.getItem("cf_min_safe")):50000;
 
@@ -870,7 +871,7 @@ function renderCF(){
     var wlbl=isNow?'\u041f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 \u0442\u0438\u0436\u0434\u0435\u043d\u044c':(wd.isPast?(Math.abs(wd.w)+' \u0442\u0438\u0436\u043d\u0456 \u0442\u043e\u043c\u0443'):('\u0422\u0438\u0436\u0434\u0435\u043d\u044c +'+(wd.w)));
     var pastMark=wd.isPast?(' <span style="font-size:9px;background:var(--surface3);color:var(--text3);padding:1px 5px;border-radius:3px">\u043c\u0438\u043d\u0443\u043b\u0438\u0439</span>'):'';
     var startIso=wd.start.toISOString().slice(0,10);
-    html+='<div class="cf-week '+lvl+(wd.isPast?' w-past':'')+(isNow?' open':'')+"\" id=\"cfw"+wd.w+'">'
+    html+='<div class="cf-week '+lvl+(wd.isPast?' w-past':'')+(cfOpenWeeks.has(wd.w)?' open':'')+"\" id=\"cfw"+wd.w+'">'
       +'<div class="cf-wh" onclick="toggleCfW('+wd.w+')">'
       +'<div class="cf-wlbl"><strong>'+wlbl+pastMark+'</strong><span>'+fmtShort(wd.start)+' \u2014 '+fmtShort(wd.end)+'</span><small>\u041f\u043e\u0447\u0430\u0442\u043e\u043a \u0442\u0438\u0436\u043d\u044f: <strong>'+fmtAED(wd.balStart)+'</strong> \u2192 \u041a\u0456\u043d\u0435\u0446\u044c \u0442\u0438\u0436\u043d\u044f: <strong>'+fmtAED(wd.balance)+'</strong></small></div>'
       +'<div class="cf-wcol"><div class="cf-wcol-l">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f</div><div class="cf-wcol-v col-in">'+(wd.wIn>0?'+'+fmtAED(wd.wIn):'\u2014')+'</div></div>'
@@ -1245,7 +1246,9 @@ function renderCfTx(t){
   // Use actual amount if available
   var actualAed=t.actual?toAED(t.actual,t.currency||'AED'):null;
   var displayAed=actualAed!==null?actualAed:aed;
-  var variance=actualAed!==null?(actualAed-aed):null;
+  // variance: positive = saved (expense less than plan), negative = overspent
+  var isIncomeTx=(t.type==='income');
+  var variance=actualAed!==null?(isIncomeTx?(actualAed-aed):(aed-actualAed)):null;
 
   // Status badge - click cycles through statuses
   var statusMap={plan:'status-plan',topay:'status-topay',paid:'status-paid',confirmed:'status-confirm',received:'status-paid'};
@@ -1288,7 +1291,12 @@ function renderCfTx(t){
   if(variance!==null){
     var varPct=aed>0?Math.round(Math.abs(variance)/aed*100):0;
     var varClass=variance>0?'variance-pos':variance<0?'variance-neg':'variance-zero';
-    varHtml='<span class="cf-tx-variance '+varClass+'">'+(variance>0?'+':'')+fmtAED(variance)+'<br>'+varPct+'%</span>';
+    var diffSign=variance>0?'+':'';
+    varHtml='<span class="cf-tx-variance '+varClass+'">'+(variance>0?'\u2212'+fmtAED(Math.abs(variance)):'+'+fmtAED(Math.abs(variance)))+'<br>'+varPct+'%</span>';
+    // For expenses: show how much less/more was paid vs plan
+    if(!isIncomeTx){
+      varHtml='<span class="cf-tx-variance '+varClass+'">'+(variance>0?'\u2212':'+\u2639')+fmtAED(Math.abs(variance))+'<br>'+(variance>0?'\u0437\u0435\u043a\u043e\u043d.':'\u043f\u0435\u0440\u0435\u0432.')+'</span>';
+    }
   }
 
   var catTxt=t.category||t.desc||'\u2014';
@@ -1333,7 +1341,7 @@ function toggleCfCritical(id){
   tx.critical=!tx.critical;
   saveCfLocal();renderCF();
 }
-function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el)el.classList.toggle('open');}
+function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el){el.classList.toggle('open');if(el.classList.contains('open'))cfOpenWeeks.add(w);else cfOpenWeeks.delete(w);}}
 function delCfTx(id){if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044e?'))return;cfTxs=cfTxs.filter(function(t){return t.id!==id;});saveCfLocal();renderCF();}
 function dupCfTx(id){var tx=cfTxs.find(function(t){return t.id===id;});if(!tx)return;var copy=Object.assign({},tx,{id:Date.now().toString()+Math.random().toString(36).slice(2),created:new Date().toISOString(),actual:undefined,status:'plan'});cfEditId=null;openCfModal(copy.date,copy.type);setTimeout(function(){var d=document.getElementById('cfDesc');var g=document.getElementById('cfGroup');var c=document.getElementById('cfCategory');var a=document.getElementById('cfAmount');var n=document.getElementById('cfNote');var cr=document.getElementById('cfCritical');if(d)d.value=copy.desc||'';if(g&&copy.group)g.value=copy.group;if(c&&copy.category)c.value=copy.category;if(a)a.value=copy.amount||'';if(n)n.value=copy.note||'';if(cr)cr.checked=!!copy.critical;setCfCur(copy.currency||'AED');updateCfStatus();var titleEl=document.querySelector('.cf-mtitle');if(titleEl)titleEl.textContent='\u0414\u0443\u0431\u043b\u0456\u043a\u0430\u0442 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u0457';},100);}
 function setCfMonth(m){cfMonth=m;renderCF();}
