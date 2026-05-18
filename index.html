@@ -313,6 +313,7 @@ var filter='all';
 var scriptUrl=localStorage.getItem(URLKEY)||'';
 var cfMonth='all';
 var cfOpenWeeks=new Set([0]); // week 0 = current week open by default
+var cfScenarioDisabled={}; // txId -> true if disabled in scenario
 var cfEditId=null;
 var minSafeBalance=localStorage.getItem("cf_min_safe")?parseFloat(localStorage.getItem("cf_min_safe")):50000;
 
@@ -897,7 +898,7 @@ function renderCF(){
   var DONUT_COLORS=['#2563EB','#7C3AED','#059669','#D97706','#DC2626','#0D9488','#EA580C'];
 
   var html='<div>'
-    +'<div class="cf-controls"><div class="cf-months">'+monthBtns+'</div><button class="cf-print-btn" onclick="window.print()">\u2b07 \u0414\u0440\u0443\u043a / PDF</button><button class="cf-add-btn" onclick="openCfModal()">+ \u0422\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044f</button></div>'
+    +'<div class="cf-controls"><div class="cf-months">'+monthBtns+'</div><button class="cf-print-btn" onclick="window.print()">\u2b07 \u0414\u0440\u0443\u043a / PDF</button><button class="cf-add-btn" style="background:var(--accent2)" onclick="openScenario()">\u1f4ca \u0421\u0446\u0435\u043d\u0430\u0440\u0456\u0439</button><button class="cf-add-btn" onclick="openCfModal()">+ \u0422\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044f</button></div>'
     +'<div class="cf-kpi-grid">'
     +'<div class="cf-kpi bank" onclick="setBankManual()" title="\u041d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c \u0449\u043e\u0431 \u043e\u043d\u043e\u0432\u0438\u0442\u0438"><div class="cf-kpi-lbl">Bank_AED \u0437\u0430\u0440\u0430\u0437 \u270e</div><div class="cf-kpi-val v-teal">'+(bankAED!==null?fmtAED(bank0):'\u2014 \u043d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c')+'</div><div class="cf-kpi-sub">'+(bankAED!==null?'\u2248 '+fmtUSD(bank0/FX):'\u0432\u0432\u0435\u0434\u0456\u0442\u044c \u0437\u0430\u043b\u0438\u0448\u043e\u043a')+'</div></div>'
     +'<div class="cf-kpi inc"><div class="cf-kpi-lbl">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f (4 \u0442\u0438\u0436\u043d\u0456)</div><div class="cf-kpi-val v-blue">'+fmtAED(totalIn4)+'</div><div class="cf-kpi-sub">\u2248 '+fmtUSD(totalIn4/FX)+'</div></div>'
@@ -915,7 +916,7 @@ function renderCF(){
     +'<div class="cf-donut-card"><div class="cf-donut-title">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f vs \u0412\u0438\u0442\u0440\u0430\u0442\u0438</div><div class="donut-wrap"><canvas class="donut" id="donutInOut"></canvas><div class="donut-legend"><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--teal)"></span>\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f</span><span class="donut-leg-val">'+fmtAED(catIn)+'</span></div><div class="donut-leg-row"><span class="donut-leg-label"><span class="donut-leg-dot" style="background:var(--red)"></span>\u0412\u0438\u0442\u0440\u0430\u0442\u0438</span><span class="donut-leg-val">'+fmtAED(Object.values(catOut).reduce(function(a,v){return a+v;},0))+'</span></div></div></div></div>'
     +'</div>'
     +generateCapexOpex(allTxs)
-    +generateBalanceForecastTable(allTxs,bank0)
+    +'<div id="forecastTableWrap">'+generateBalanceForecastTable(allTxs,bank0)+'</div>'
     +'<div class="cf-weeks">';
 
   weekData.forEach(function(wd){
@@ -956,6 +957,77 @@ function renderCF(){
 }
 
 var qaCurrentId=null;
+
+var scenarioOverlayOpen = false;
+
+function openScenario(){
+  // Build list of future pending income transactions
+  var today=new Date();today.setHours(0,0,0,0);
+  var allTxs=cfTxs.concat(getCrmAllPays());
+  var incomes=allTxs.filter(function(t){
+    if(t.type!=='income')return false;
+    if(t.status==='paid'||t.status==='received')return false;
+    if(!t.date)return false;
+    var td=new Date(t.date);
+    return td>=today;
+  }).sort(function(a,b){return a.date>b.date?1:-1;});
+
+  var rows=incomes.map(function(t){
+    var aed=t.actual?parseFloat(t.actual):txAED(t);
+    var checked=!cfScenarioDisabled[t.id];
+    var safeId=String(t.id).replace(/['"]/g,'_');
+    return '<tr style="border-bottom:1px solid var(--border)">'      +'<td style="padding:8px 12px"><input type="checkbox" id="sc_'+safeId+'" '+(checked?'checked':'')+' onchange="toggleScenarioTx(\''+safeId+'\',this.checked)" style="width:16px;height:16px;cursor:pointer"></td>'      +'<td style="padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--mono)">'+t.date+'</td>'      +'<td style="padding:8px 12px;font-size:12px;font-weight:500">'+esc(t.desc||t.category||'')+'</td>'      +'<td style="padding:8px 12px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--teal);text-align:right">+'+fmtAED(aed)+'</td>'      +'</tr>';
+  }).join('');
+
+  if(!rows) rows='<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text3)">Немає майбутніх надходжень</td></tr>';
+
+  var total=incomes.filter(function(t){return !cfScenarioDisabled[t.id];}).reduce(function(s,t){return s+(t.actual?parseFloat(t.actual):txAED(t));},0);
+
+  var overlay=document.getElementById('scenarioOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='scenarioOverlay';
+    overlay.style.cssText='position:fixed;inset:0;z-index:350;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML='<div style="background:var(--surface);border-radius:14px;width:560px;max-width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)">'    +'<div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'    +'<span style="font-size:15px;font-weight:700;color:var(--accent2)">Сценарний аналіз — Надходження</span>'    +'<button onclick="closeScenario()" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px;color:var(--text3)">✕</button>'    +'</div>'    +'<div style="padding:10px 20px;background:var(--surface2);font-size:12px;color:var(--text2)">Зніміть галочку щоб вимкнути надходження зі сценарію. Таблиця прогнозу перерахується автоматично.</div>'    +'<div style="overflow-y:auto;flex:1">'    +'<table style="width:100%;border-collapse:collapse">'    +'<thead><tr style="background:var(--surface2)"><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase"></th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Дата</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Опис</th><th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase">Сума</th></tr></thead>'    +'<tbody id="scenarioRows">'+rows+'</tbody>'    +'</table>'    +'</div>'    +'<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'    +'<span style="font-size:12px;color:var(--text2)">Увімкнено: <strong id="scenarioTotal" style="font-family:var(--mono);color:var(--teal)">+'+fmtAED(total)+'</strong></span>'    +'<div style="display:flex;gap:8px">'    +'<button onclick="resetScenario()" style="padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer">Скинути</button>'    +'<button onclick="closeScenario()" style="padding:7px 14px;border-radius:var(--radius-sm);background:var(--accent2);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer">Застосувати</button>'    +'</div>'    +'</div>'    +'</div>';
+  overlay.style.display='flex';
+}
+
+function toggleScenarioTx(id, enabled){
+  // Find original id
+  var allTxs=cfTxs.concat(getCrmAllPays());
+  var found=allTxs.find(function(t){return String(t.id).replace(/['"]/g,'_')===id;});
+  var realId=found?found.id:id;
+  if(enabled) delete cfScenarioDisabled[realId];
+  else cfScenarioDisabled[realId]=true;
+  // Update total
+  var today=new Date();today.setHours(0,0,0,0);
+  var total=allTxs.filter(function(t){
+    if(t.type!=='income'||t.status==='paid'||t.status==='received')return false;
+    if(!t.date||new Date(t.date)<today)return false;
+    return !cfScenarioDisabled[t.id];
+  }).reduce(function(s,t){return s+(t.actual?parseFloat(t.actual):txAED(t));},0);
+  var el=document.getElementById('scenarioTotal');
+  if(el) el.textContent='+'+fmtAED(total);
+  // Refresh forecast table
+  var fc=document.getElementById('forecastTableWrap');
+  if(fc) fc.innerHTML=generateBalanceForecastTable(cfTxs.concat(getCrmAllPays()),bankAED||0);
+}
+
+function resetScenario(){
+  cfScenarioDisabled={};
+  openScenario();
+  var fc=document.getElementById('forecastTableWrap');
+  if(fc) fc.innerHTML=generateBalanceForecastTable(cfTxs.concat(getCrmAllPays()),bankAED||0);
+}
+
+function closeScenario(){
+  var overlay=document.getElementById('scenarioOverlay');
+  if(overlay) overlay.style.display='none';
+  renderCF();
+}
+
 function openQA(id){
   var tx=cfTxs.find(function(t){return t.id===id;});
   if(!tx)return;
@@ -1001,7 +1073,9 @@ function generateBalanceForecastTable(allTxs,bankNow){
       if(t.status==='paid'||t.status==='received')return;
       if(td<today)return;
       var aed=t.actual?parseFloat(t.actual):txAED(t);
-      if(t.type==='income')mIn+=aed; else mOut+=aed;
+      if(t.type==='income'){
+        if(!cfScenarioDisabled[t.id]) mIn+=aed;
+      } else mOut+=aed;
     });
     var s=run; run+=mIn-mOut;
     var c=run>=minSafeBalance?'var(--green)':'var(--red)';
