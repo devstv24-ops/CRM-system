@@ -787,7 +787,13 @@ function getWeekBounds(offset){var now=new Date();var dow=now.getDay();var monda
 function fmtShort(d){return d.toLocaleDateString('uk',{day:'2-digit',month:'short'});}
 function getCrmPays(){
   var arr=[];
-  deals.forEach(function(d){if(d.status==='lost')return;(d.payments||[]).forEach(function(p){if(!p.amount||p.paid)return;arr.push({id:'crm_'+d.id+'_'+p.label,date:p.date||'',type:'income',desc:d.client+' \u2014 '+(p.label||''),amount:p.amount,currency:d.currency||'USD',source:'crm',note:d.projectNum||'',category:'Sales - Repair Services',group:'Income'});});});
+  deals.forEach(function(d){if(d.status==='lost')return;(d.payments||[]).forEach(function(p){if(!p.amount||p.paid)return;arr.push({id:'crm_'+d.id+'_'+p.label,date:p.date||'',type:'income',desc:d.client+' — '+(p.label||''),amount:p.amount,currency:d.currency||'USD',source:'crm',status:'confirmed',note:d.projectNum||'',category:'Sales - Repair Services',group:'Income'});});});
+  return arr;
+}
+function getCrmAllPays(){
+  // ALL CRM payments including paid ones - for full picture charts
+  var arr=[];
+  deals.forEach(function(d){if(d.status==='lost')return;(d.payments||[]).forEach(function(p){if(!p.amount)return;arr.push({id:'crm_all_'+d.id+'_'+p.label,date:p.date||'',type:'income',desc:d.client+' — '+(p.label||''),amount:p.amount,currency:d.currency||'USD',source:'crm',status:p.paid?'received':'confirmed',note:d.projectNum||'',category:'Sales - Repair Services',group:'Income'});});});
   return arr;
 }
 function getCfMonths(){
@@ -880,8 +886,9 @@ function renderCF(){
 
   /* Category breakdown for donuts */
   var catOut={};var catIn=0;
-  var today2=new Date();today2.setHours(0,0,0,0);
-  allTxs.forEach(function(t){
+  // Use ALL CRM payments (including paid) for full picture in donut
+  var allTxsFull=cfTxs.concat(getCrmAllPays());
+  allTxsFull.forEach(function(t){
     var aed=t.actual?parseFloat(t.actual):txAED(t);
     if(t.type==='income'){catIn+=aed;}
     else{var cat=t.category||t.type||'\u0406\u043d\u0448\u0435';catOut[cat]=(catOut[cat]||0)+aed;}
