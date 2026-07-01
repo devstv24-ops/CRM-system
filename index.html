@@ -1965,6 +1965,14 @@ function saveProjectAggr(pi){
   var allProjects=syncProjectsFromDeals();
   var p=allProjects[pi];
   if(p&&p.projectNum&&sb){
+    sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'}).then(function(r){if(r.error)console.error('aggr:',r.error);else console.log('saved OK');});
+  }
+  var btn=document.getElementById('regSaveBtn'+pi);
+  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='Зберегти';btn.style.background='';}},2000);}
+}unction saveProjectAggr(pi){
+  var allProjects=syncProjectsFromDeals();
+  var p=allProjects[pi];
+  if(p&&p.projectNum&&sb){
     sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'}).then(function(r){if(r.error)console.error('aggr save:',r.error);});
   }
   var btn=document.getElementById('regSaveBtn'+pi);
