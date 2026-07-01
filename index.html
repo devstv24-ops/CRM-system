@@ -404,8 +404,9 @@ function closeQuickActual(){
 
 
 function init(){
-  // Supabase already initialized on DOMContentLoaded
+  // Ensure Supabase is initialized
   if(!sb&&window.supabase) sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  if(!sb){setTimeout(function(){init();},300);return;}
   // Show login by default until we confirm session
   document.getElementById('loginOverlay').classList.remove('hidden');
   // Load CF cache
@@ -444,6 +445,8 @@ function init(){
 function hide(){document.getElementById('loading').classList.add('hidden');}
 function setBadge(t,c){var b=document.getElementById('saveBadge');b.textContent=t;b.className='save-badge '+c;}
 async function doLogin(){
+  if(!sb&&window.supabase) sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  if(!sb){alert('Помилка: бібліотека не завантажена. Оновіть сторінку.');return;}
   var email=document.getElementById('loginEmail').value.trim();
   var pass=document.getElementById('loginPass').value;
   var err=document.getElementById('loginErr');
