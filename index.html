@@ -471,6 +471,7 @@ async function loadFromSupabase(){
     var savedBank=localStorage.getItem('cf_bank_aed');
     if(savedBank) bankAED=parseFloat(savedBank)||null;
     setBadge('Збережено ✓','ok');
+    await loadProjectsFromSupabase();
     render();
   } catch(e){
     setBadge('Помилка завантаження','err');
@@ -1685,6 +1686,26 @@ function loadProjects(){
 function saveProjects(projects){
   localStorage.setItem(PROJ_KEY,JSON.stringify(projects));
 }
+async function loadProjectsFromSupabase(){
+  if(!sb) return;
+  var r=await sb.from('projects').select('*');
+  if(r.error||!r.data||!r.data.length) return;
+  var local=loadProjects();
+  var localMap={};
+  local.forEach(function(p){localMap[p.projectNum]=p;});
+  r.data.forEach(function(row){
+    var pnum=row.project_num;
+    if(localMap[pnum]){
+      // Merge: Supabase aggregates override if they exist
+      if(row.aggregates&&row.aggregates.length>0){
+        localMap[pnum].aggregates=row.aggregates;
+      }
+    }
+  });
+  var merged=Object.values(localMap);
+  saveProjects(merged);
+  return merged;
+}
 function syncProjectsFromDeals(){
   var projects=loadProjects();
   var existingNums={};
@@ -1941,6 +1962,14 @@ function delAggr(pi,ai){
   }
 }
 function saveProjectAggr(pi){
+  var allProjects=syncProjectsFromDeals();
+  var p=allProjects[pi];
+  if(p&&p.projectNum&&sb){
+    sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'}).then(function(r){if(r.error)console.error('aggr save:',r.error);});
+  }
+  var btn=document.getElementById('regSaveBtn'+pi);
+  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='Зберегти';btn.style.background='';}},2000);}
+}unction saveProjectAggr(pi){
   var btn=document.getElementById('regSaveBtn'+pi);
   if(btn){btn.textContent='\u2713 \u0417\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043e';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438';btn.style.background='';}},2000);}
 }
