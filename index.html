@@ -29,7 +29,7 @@
 .logout-btn{padding:4px 10px;border-radius:6px;border:1px solid #E2E5EC;background:transparent;font-size:11px;color:#4A5168;cursor:pointer;font-family:inherit}
 .logout-btn:hover{border-color:#DC2626;color:#DC2626}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -341,6 +341,12 @@ var FX=3.67;
 var PROJ_KEY='avronis_projects_v1';
 var sb=null;
 var currentUser=null;
+// Init Supabase immediately when script loads
+document.addEventListener('DOMContentLoaded',function(){
+  if(window.supabase){
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  }
+});
 
 var deals=[];
 var cfTxs=[];
@@ -349,7 +355,7 @@ var editId=null,editItems=[],editPayments=[],calcParts=[];
 var editCur='USD';
 var cfCur='AED';
 var filter='all';
-var scriptUrl=localStorage.getItem(URLKEY)||'';
+var scriptUrl='';
 var cfMonth='all';
 var cfOpenWeeks=new Set([0]); // week 0 = current week open by default
 var cfScenarioDisabled={};
@@ -398,7 +404,8 @@ function closeQuickActual(){
 
 
 function init(){
-  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  // Supabase already initialized on DOMContentLoaded
+  if(!sb&&window.supabase) sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   // Show login by default until we confirm session
   document.getElementById('loginOverlay').classList.remove('hidden');
   // Load CF cache
@@ -527,12 +534,12 @@ async function saveBankBalance(val){
   await sb.from('settings').upsert({key:'bank_aed',value:String(val),updated_at:new Date().toISOString()});
 }
 function saveCfLocal(){localStorage.setItem('avronis_cf_v1',JSON.stringify(cfTxs));}
-function connectScript(){var url=document.getElementById('scriptUrl').value.trim();if(url.indexOf('script.google.com')<0){alert('\u041d\u0435\u0432\u0456\u0440\u043d\u0438\u0439 URL');return;}scriptUrl=url;localStorage.setItem(URLKEY,url);document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
+function connectScript(){var url=document.getElementById('scriptUrl').value.trim();if(url.indexOf('script.google.com')<0){alert('\u041d\u0435\u0432\u0456\u0440\u043d\u0438\u0439 URL');return;}scriptUrl=url;document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
 function useLocal(){document.getElementById('setupBanner').classList.add('hidden');var local=localStorage.getItem(LSKEY);try{deals=local?JSON.parse(local).filter(function(d){return d&&d.client;}):[]; }catch(e){deals=[];}setBadge('\u041b\u043e\u043a\u0430\u043b\u044c\u043d\u043e','err');render();hide();}
 
 // \u042f\u043a\u0449\u043e URL \u0441\u043a\u0440\u0438\u043f\u0442\u0443 \u0454 \u2014 \u043e\u0434\u0440\u0430\u0437\u0443 \u043f\u0456\u0434\u043a\u043b\u044e\u0447\u0430\u0454\u043c\u043e \u0431\u0435\u0437 \u0431\u0430\u043d\u0435\u0440\u0430
 function checkAndConnect(){
-  var saved=localStorage.getItem(URLKEY);
+  var saved='';
   if(saved&&saved.indexOf('script.google.com')>-1){
     scriptUrl=saved;
     document.getElementById('setupBanner').classList.add('hidden');
