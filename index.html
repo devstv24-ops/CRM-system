@@ -581,51 +581,7 @@ function updateKPIs(){
   projects.forEach(function(p){(p.aggregates||[]).forEach(function(ag){if(ag.workStatus!=='Відвантажено'){aggrWork++;if(ag.shipDate&&new Date(ag.shipDate)<now)aggrOverdue++;}});});
   safe('kAggrWork',String(aggrWork));
   var owEl=document.getElementById('kOverdue');if(owEl){owEl.textContent=String(aggrOverdue);owEl.style.color=aggrOverdue>0?'var(--red)':'var(--text)';}
-}unction updateKPIs(){
-  // Row 1: Contracts signed / Received / Awaiting / Bank
-  var contracted=deals.filter(function(d){return ['won','work','contract','invoice','awaiting','closed'].indexOf(d.status)>-1;});
-  var awaiting=deals.filter(function(d){return d.status==='awaiting';});
-  var lost=deals.filter(function(d){return d.status==='lost';});
-  var pipeline=deals.filter(function(d){return ['new','pause'].indexOf(d.status)>-1;});
-  function sumUSD(arr){return arr.reduce(function(a,d){return a+dealTotalUSD(d);},0);}
-  function sumPaidUSD(arr){return arr.reduce(function(a,d){return a+dealPaidUSD(d);},0);}
-  var allUSD=sumUSD(deals.filter(function(d){return d.status!=='lost';}));
-  // Row 1
-  var wonUSD=sumUSD(contracted);
-  var recUSD=sumPaidUSD(deals);
-  var awUSD=sumUSD(awaiting);
-  var pipeUSD=sumUSD(pipeline);
-  var lostUSD=sumUSD(lost);
-  function setKpi(id,usd){var el=document.getElementById(id);if(el)el.textContent=fmtUSD(usd);}
-  function setKpiAED(id,usd){var el=document.getElementById(id);if(el)el.textContent=fmtAED(usd*FX);}
-  function setKpiSub(id,t){var el=document.getElementById(id);if(el)el.textContent=t;}
-  function setBar(id,usd,max){var el=document.getElementById(id);if(el&&max>0)el.style.width=Math.min(100,usd/max*100)+'%';}
-  setKpi('kWon',wonUSD);setKpiAED('kWonA',wonUSD);setKpiSub('kWonC',contracted.length+' угод');setBar('kWonBar',wonUSD,allUSD);
-  setKpi('kReceived',recUSD);setKpiAED('kReceivedA',recUSD);
-  setKpi('kAwaiting',awUSD);setKpiAED('kAwaitingA',awUSD);setKpiSub('kAwaitingC',awaiting.length+' угод');
-  // Bank balance from CF
-  var bankEl=document.getElementById('kBank');
-  if(bankEl)bankEl.textContent=bankAED!==null?fmtAED(bankAED):'—';
-  // Row 2: Aggregates
-  var projects=loadProjects();
-  var now=new Date();now.setHours(0,0,0,0);
-  var aggrWork=0,aggrOverdue=0;
-  projects.forEach(function(p){
-    (p.aggregates||[]).forEach(function(ag){
-      if(ag.workStatus!=='Відвантажено'){
-        aggrWork++;
-        if(ag.shipDate&&new Date(ag.shipDate)<now) aggrOverdue++;
-      }
-    });
-  });
-  var awEl=document.getElementById('kAggrWork');if(awEl)awEl.textContent=aggrWork;
-  var owEl=document.getElementById('kOverdue');if(owEl){owEl.textContent=aggrOverdue;owEl.style.color=aggrOverdue>0?'var(--red)':'var(--text)';}
-  setKpi('kPipe',pipeUSD);setKpiAED('kPipeA',pipeUSD);setKpiSub('kPipeC',pipeline.length+' угод');setBar('kPipeBar',pipeUSD,allUSD);
-  setKpi('kLost',lostUSD);setKpiAED('kLostA',lostUSD);setKpiSub('kLostC',lost.length+' угод');
-  // Also update kPause and kWon for old references (keep for archive tab etc)
-  var kPauseEl=document.getElementById('kPause');if(kPauseEl)kPauseEl.textContent=fmtUSD(sumUSD(deals.filter(function(d){return d.status==='pause';})));
 }
-unction updateKPIs(){
 
 function render(){
   updateKPIs();
