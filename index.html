@@ -1688,6 +1688,25 @@ function saveProjects(projects){
 }
 async function loadProjectsFromSupabase(){
   if(!sb) return;
+  try{
+    var r=await sb.from('projects').select('*');
+    if(r.error||!r.data||!r.data.length) return;
+    var local=loadProjects();
+    var localMap={};
+    local.forEach(function(p){localMap[p.projectNum]=p;});
+    r.data.forEach(function(row){
+      var pnum=row.project_num;
+      if(localMap[pnum]){
+        if(row.aggregates&&row.aggregates.length>0) localMap[pnum].aggregates=row.aggregates;
+      } else {
+        localMap[pnum]={projectNum:pnum,client:row.client,status:row.status,serviceType:row.service_type,desc:row.description,aggregates:row.aggregates||[]};
+      }
+    });
+    saveProjects(Object.values(localMap));
+  }catch(e){console.error('loadProjects:',e);}
+}
+async function loadProjectsFromSupabase(){
+  if(!sb) return;
   var r=await sb.from('projects').select('*');
   if(r.error||!r.data||!r.data.length) return;
   var local=loadProjects();
