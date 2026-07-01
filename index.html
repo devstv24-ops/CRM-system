@@ -399,7 +399,15 @@ function closeQuickActual(){
 
 function init(){
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  sb.auth.onAuthStateChange(function(event,session){
+  // Show login by default until we confirm session
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  // Load CF cache
+  try{var d=localStorage.getItem('avronis_cf_v1');if(d)cfTxs=JSON.parse(d);}catch(e){cfTxs=[];}
+  var saved=localStorage.getItem('cf_bank_aed');
+  if(saved!==null&&!isNaN(parseFloat(saved)))bankAED=parseFloat(saved);
+  // Check session first, then listen for changes
+  sb.auth.getSession().then(function(r){
+    var session=r.data&&r.data.session?r.data.session:null;
     if(session&&session.user){
       currentUser=session.user;
       document.getElementById('loginOverlay').classList.add('hidden');
@@ -407,21 +415,24 @@ function init(){
       if(ub)ub.innerHTML='<span class="user-badge">'+currentUser.email+'<button class="logout-btn" onclick="doLogout()">Вийти</button></span>';
       loadFromSupabase();
     } else {
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      hide();
+    }
+  });
+  sb.auth.onAuthStateChange(function(event,session){
+    if(event==='SIGNED_IN'&&session&&session.user){
+      currentUser=session.user;
+      document.getElementById('loginOverlay').classList.add('hidden');
+      var ub=document.getElementById('userBadge');
+      if(ub)ub.innerHTML='<span class="user-badge">'+currentUser.email+'<button class="logout-btn" onclick="doLogout()">Вийти</button></span>';
+      if(!deals.length) loadFromSupabase();
+    } else if(event==='SIGNED_OUT'){
       currentUser=null;
+      deals=[];
       document.getElementById('loginOverlay').classList.remove('hidden');
-      hide();
+      render();
     }
   });
-  sb.auth.getSession().then(function(r){
-    if(!r.data.session){
-      document.getElementById('loginOverlay').classList.remove('hidden');
-      hide();
-    }
-  });
-  // Load CF from localStorage as cache
-  try{var d=localStorage.getItem('avronis_cf_v1');if(d)cfTxs=JSON.parse(d);}catch(e){cfTxs=[];}
-  var saved=localStorage.getItem('cf_bank_aed');
-  if(saved!==null&&!isNaN(parseFloat(saved)))bankAED=parseFloat(saved);
 }
 function hide(){document.getElementById('loading').classList.add('hidden');}
 function setBadge(t,c){var b=document.getElementById('saveBadge');b.textContent=t;b.className='save-badge '+c;}
