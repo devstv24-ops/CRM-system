@@ -468,8 +468,8 @@ async function loadFromSupabase(){
     var rc=await sb.from('cf_transactions').select('*').order('tx_date',{ascending:true});
     if(!rc.error&&rc.data) cfTxs=rc.data.map(function(t){return {id:'tx_'+t.id,_dbId:t.id,date:t.tx_date,type:t.type,desc:t.description,amount:t.amount,currency:t.currency,actualAmount:t.actual_amount,status:t.status,isCritical:t.is_critical,note:t.note,source:t.source||'manual'};});
     // Load bank balance
-    var rs=await sb.from('settings').select('value').eq('key','bank_aed').maybeSingle();
-    if(rs.data&&rs.data.value) bankAED=parseFloat(rs.data.value)||null;
+    var savedBank=localStorage.getItem('cf_bank_aed');
+    if(savedBank) bankAED=parseFloat(savedBank)||null;
     setBadge('Збережено ✓','ok');
     render();
   } catch(e){
@@ -530,7 +530,7 @@ async function deleteCfTxFromDb(dbId){
   await sb.from('cf_transactions').delete().eq('id',dbId);
 }
 async function saveBankBalance(val){
-  await sb.from('settings').upsert({key:'bank_aed',value:String(val),updated_at:new Date().toISOString()});
+  localStorage.setItem('cf_bank_aed',String(val));
 }
 function saveCfLocal(){localStorage.setItem('avronis_cf_v1',JSON.stringify(cfTxs));}
 function connectScript(){var url=document.getElementById('scriptUrl').value.trim();if(url.indexOf('script.google.com')<0){alert('\u041d\u0435\u0432\u0456\u0440\u043d\u0438\u0439 URL');return;}scriptUrl=url;document.getElementById('setupBanner').classList.add('hidden');loadFromSheets();}
@@ -1774,6 +1774,41 @@ function renderRegistry(){
   });
   tlHtml+='</div></div>';
   var hdrHtml='<div class="reg-header"><div class="reg-title">\ud83d\udccb \u0420\u0435\u0454\u0441\u0442\u0440 \u043f\u0440\u043e\u0435\u043a\u0442\u0456\u0432 <span style="font-size:12px;font-weight:400;color:var(--text3)">('+projects.length+')</span></div><button class="reg-prod-btn" onclick="openProdPlan()">\ud83d\udcc4 \u041f\u043b\u0430\u043d \u0432\u0438\u0440\u043e\u0431\u043d\u0438\u0446\u0442\u0432\u0430</button></div>';
+  // Aggregate summary - ALL projects including archived
+  var allAggr=[];
+  allProjects.forEach(function(p){(p.aggregates||[]).forEach(function(ag){allAggr.push({projectNum:p.projectNum,client:p.client,dealStatus:p.status,type:ag.type||'',serial:ag.serial||'',qty:ag.qty||1,workStatus:ag.workStatus||'',shipDate:ag.shipDate||'',note:ag.note||''});});});
+  var aggrFilter=window._regAggrFilter||'all';
+  var filteredAggr=aggrFilter==='all'?allAggr:allAggr.filter(function(a){return a.workStatus===aggrFilter;});
+  var sCounts={};allAggr.forEach(function(a){sCounts[a.workStatus]=(sCounts[a.workStatus]||0)+1;});
+  var wsC={'Прийнятий':'#2563EB','В роботі':'#D97706','Завершено':'#0D9488','Відвантажено':'#059669'};
+  var sKeys=[['all','Всі ('+allAggr.length+')'],
+    ['Прийнятий','Прийнятий ('+(sCounts['Прийнятий']||0)+')'],
+    ['В роботі','В роботі ('+(sCounts['В роботі']||0)+')'],
+    ['Завершено','Завершено ('+(sCounts['Завершено']||0)+')'],
+    ['Відвантажено','Відвантажено ('+(sCounts['Відвантажено']||0)+')']];
+  var aggrRowsHtml=filteredAggr.length?filteredAggr.map(function(a){
+    var c=wsC[a.workStatus]||'#8B92A5';
+    var dsColor={'won':'#059669','closed':'#7C3AED','lost':'#DC2626','work':'#D97706','awaiting':'#0D9488'}[a.dealStatus]||'#8B92A5';
+    return '<tr style="border-bottom:1px solid #E2E5EC">'
+      +'<td style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:#2563EB;font-weight:600">'+esc(a.projectNum)+'</td>'
+      +'<td style="padding:8px 12px;font-size:12px;font-weight:500">'+esc(a.client)+'</td>'
+      +'<td style="padding:8px 12px;font-size:12px">'+esc(a.type)+'</td>'
+      +'<td style="padding:8px 12px;font-family:var(--mono);font-size:12px">'+esc(a.serial||'—')+'</td>'
+      +'<td style="padding:8px 12px;text-align:center;font-size:12px">'+a.qty+'</td>'
+      +'<td style="padding:8px 12px"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:'+c+'22;color:'+c+'">'+esc(a.workStatus||'—')+'</span></td>'
+      +'<td style="padding:8px 12px;font-family:var(--mono);font-size:11px;color:#4A5168">'+esc(a.shipDate||'—')+'</td>'
+      +'<td style="padding:8px 12px;font-size:11px;color:#8B92A5">'+esc(a.note||'')+'</td>'
+      +'</tr>';
+  }).join(''):'<tr><td colspan="8" style="padding:20px;text-align:center;color:#8B92A5;font-size:12px">Агрегатів немає</td></tr>';
+  var aggrTableHtml='<div style="background:#fff;border:1px solid #E2E5EC;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'
+    +'<div style="padding:12px 16px;border-bottom:1px solid #E2E5EC;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
+    +'<div style="font-size:13px;font-weight:700;color:#1A1D23">Зведений реєстр агрегатів <span style="font-size:11px;font-weight:400;color:#8B92A5">(всі проекти, '+allAggr.length+' позицій)</span></div>'
+    +'<div style="display:flex;gap:5px;flex-wrap:wrap">'+sKeys.map(function(sk){var isAct=aggrFilter===sk[0];var onclick='window._regAggrFilter=\"'+sk[0]+'\";renderRegistry()';return '<button onclick="'+onclick+'" style="padding:3px 10px;border-radius:20px;border:1px solid '+(isAct?'#0D9488':'#E2E5EC')+';background:'+(isAct?'#0D9488':'transparent')+';color:'+(isAct?'#fff':'#4A5168')+';font-size:11px;cursor:pointer;font-weight:'+(isAct?'600':'400')+'">'+sk[1]+'</button>';}).join('')+'</div>'
+    +'</div>'
+    +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:#F8F9FC"><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Проект</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Замовник</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Тип</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Зав. №</th><th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">К-ть</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Статус</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Відвантаження</th><th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#8B92A5;text-transform:uppercase">Нотатка</th></tr></thead>'
+    +'<tbody>'+aggrRowsHtml+'</tbody></table></div></div>';
+
   var cardsHtml='';
   if(!projects.length){
     cardsHtml='<div class="reg-empty"><div style="font-size:32px;margin-bottom:10px">\ud83d\udccb</div><div style="font-weight:600">\u0420\u0435\u0454\u0441\u0442\u0440 \u043f\u043e\u0440\u043e\u0436\u043d\u0456\u0439</div></div>';
@@ -1833,7 +1868,7 @@ function renderRegistry(){
     archHtml+='</div>';
   }
 
-  el.innerHTML=kpiHtml+tlHtml+hdrHtml+cardsHtml+archHtml;
+  el.innerHTML=kpiHtml+tlHtml+aggrTableHtml+hdrHtml+cardsHtml+archHtml;
 }
 function renderAggrCard(pi,ai,ag,now){
   var wsColor=WS_COLORS[ag.workStatus]||'#CDD2DC';
