@@ -472,8 +472,8 @@ async function loadFromSupabase(){
     var rc=await sb.from('cf_transactions').select('*').order('tx_date',{ascending:true});
     if(!rc.error&&rc.data) cfTxs=rc.data.map(function(t){return {id:'tx_'+t.id,_dbId:t.id,date:t.tx_date,type:t.type,desc:t.description,amount:t.amount,currency:t.currency,actualAmount:t.actual_amount,status:t.status,isCritical:t.is_critical,note:t.note,source:t.source||'manual'};});
     // Load bank balance
-    var rs=await sb.from('settings').select('value').eq('key','bank_aed').single();
-    if(!rs.error&&rs.data) bankAED=parseFloat(rs.data.value)||null;
+    var rs=await sb.from('settings').select('value').eq('key','bank_aed').maybeSingle();
+    if(rs.data&&rs.data.value) bankAED=parseFloat(rs.data.value)||null;
     setBadge('Збережено ✓','ok');
     render();
   } catch(e){
@@ -550,6 +550,13 @@ function checkAndConnect(){
   }
 }
 
+
+function toUSD(amt,cur){return cur==='AED'?amt/FX:amt;}
+function fmtUSD(n){return '$'+Math.round(Math.abs(n||0)).toLocaleString('en-US');}
+function fmtAED(n){return 'AED '+Math.round(Math.abs(n||0)).toLocaleString('en-US');}
+function fmtCur(amt,cur){return cur==='AED'?fmtAED(amt):fmtUSD(amt);}
+function dealTotalUSD(d){var raw=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;return toUSD(raw,d.currency||'USD');}
+function dealPaidUSD(d){var raw=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);return toUSD(raw,d.currency||'USD');}
 function updateKPIs(){
   var confirmed=deals.filter(function(d){return ['won','awaiting','closed'].indexOf(d.status)>-1;});
   var lost=deals.filter(function(d){return d.status==='lost';});
