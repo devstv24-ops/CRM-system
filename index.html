@@ -62,18 +62,21 @@
 <main>
 
 <div class="kpi-grid">
-<div class="kpi"><div class="kpi-lbl">Підтверджено</div><div class="kpi-val" id="kWon">$0</div><div class="kpi-aed" id="kWonA">AED 0</div><div class="kpi-sub" id="kWonC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--green)" id="kWonBar"></div></div></div>
-<div class="kpi"><div class="kpi-lbl">Pipeline</div><div class="kpi-val" id="kPipe">$0</div><div class="kpi-aed" id="kPipeA">AED 0</div><div class="kpi-sub" id="kPipeC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent)" id="kPipeBar"></div></div></div>
-<div class="kpi"><div class="kpi-lbl">На паузі</div><div class="kpi-val" id="kPause">$0</div><div class="kpi-aed" id="kPauseA">AED 0</div><div class="kpi-sub" id="kPauseC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--amber)" id="kPauseBar"></div></div></div>
-<div class="kpi"><div class="kpi-lbl">Програно</div><div class="kpi-val" id="kLost">$0</div><div class="kpi-aed" id="kLostA">AED 0</div><div class="kpi-sub" id="kLostC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--red)" id="kLostBar"></div></div></div>
-<div class="kpi"><div class="kpi-lbl">Зважений pipeline</div><div class="kpi-val" id="kW">$0</div><div class="kpi-aed" id="kWA">AED 0</div><div class="kpi-sub">з імовірністю</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent2)" id="kWBar"></div></div></div>
+<div class="kpi kpi-primary"><div class="kpi-lbl">Підписано контрактів</div><div class="kpi-val" id="kWon">$0</div><div class="kpi-aed" id="kWonA">AED 0</div><div class="kpi-sub" id="kWonC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--green)" id="kWonBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Отримано коштів</div><div class="kpi-val" id="kReceived">$0</div><div class="kpi-aed" id="kReceivedA">AED 0</div><div class="kpi-sub" id="kReceivedC">фактичні платежі</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--teal)" id="kReceivedBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Очікується оплата</div><div class="kpi-val" id="kAwaiting">$0</div><div class="kpi-aed" id="kAwaitingA">AED 0</div><div class="kpi-sub" id="kAwaitingC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:#0D9488" id="kAwaitingBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Касовий залишок</div><div class="kpi-val" id="kBank">—</div><div class="kpi-aed" id="kBankA" style="font-size:11px;color:var(--text3)">з Cash Flow</div><div class="kpi-sub" id="kBankC">залишок банку</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent)" id="kBankBar"></div></div></div>
+</div>
+<div class="kpi-grid" style="margin-top:10px">
+<div class="kpi"><div class="kpi-lbl">Агрегатів в роботі</div><div class="kpi-val" id="kAggrWork">0</div><div class="kpi-aed" id="kAggrWorkA" style="font-size:11px;color:var(--text3)">активні проекти</div><div class="kpi-sub" id="kAggrWorkC">в реєстрі</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent)" id="kAggrWorkBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Прострочені відвантаження</div><div class="kpi-val" id="kOverdue" style="color:var(--red)">0</div><div class="kpi-aed" id="kOverdueA" style="font-size:11px;color:var(--text3)">дата минула</div><div class="kpi-sub" id="kOverdueC">агрегатів</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--red)" id="kOverdueBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Pipeline</div><div class="kpi-val" id="kPipe">$0</div><div class="kpi-aed" id="kPipeA">AED 0</div><div class="kpi-sub" id="kPipeC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--accent2)" id="kPipeBar"></div></div></div>
+<div class="kpi"><div class="kpi-lbl">Програно</div><div class="kpi-val" id="kLost" style="color:var(--red)">$0</div><div class="kpi-aed" id="kLostA">AED 0</div><div class="kpi-sub" id="kLostC">0 угод</div><div class="kpi-bar"><div class="kpi-bar-fill" style="background:var(--red)" id="kLostBar"></div></div></div>
 </div>
 <div class="toolbar">
 <div class="tabs">
 <button class="tab active" onclick="setFilter('all',this)">Всі</button>
-<button class="tab" onclick="setFilter('new',this)">Нові</button>
 <button class="tab" onclick="setFilter('contract',this)">Договір</button>
-<button class="tab" onclick="setFilter('invoice',this)">Інвойс</button>
 <button class="tab" onclick="setFilter('work',this)">В роботі</button>
 <button class="tab" onclick="setFilter('pause',this)">Пауза</button>
 <button class="tab" onclick="setFilter('won',this)">Виграно</button>
@@ -550,6 +553,50 @@ function fmtAED(n){return 'AED '+Math.round(Math.abs(n||0)).toLocaleString('en-U
 function fmtCur(amt,cur){return cur==='AED'?fmtAED(amt):fmtUSD(amt);}
 function dealTotalUSD(d){var raw=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;return toUSD(raw,d.currency||'USD');}
 function dealPaidUSD(d){var raw=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);return toUSD(raw,d.currency||'USD');}
+function updateKPIs(){
+  // Row 1: Contracts signed / Received / Awaiting / Bank
+  var contracted=deals.filter(function(d){return ['won','work','contract','invoice','awaiting','closed'].indexOf(d.status)>-1;});
+  var awaiting=deals.filter(function(d){return d.status==='awaiting';});
+  var lost=deals.filter(function(d){return d.status==='lost';});
+  var pipeline=deals.filter(function(d){return ['new','pause'].indexOf(d.status)>-1;});
+  function sumUSD(arr){return arr.reduce(function(a,d){return a+dealTotalUSD(d);},0);}
+  function sumPaidUSD(arr){return arr.reduce(function(a,d){return a+dealPaidUSD(d);},0);}
+  var allUSD=sumUSD(deals.filter(function(d){return d.status!=='lost';}));
+  // Row 1
+  var wonUSD=sumUSD(contracted);
+  var recUSD=sumPaidUSD(deals);
+  var awUSD=sumUSD(awaiting);
+  var pipeUSD=sumUSD(pipeline);
+  var lostUSD=sumUSD(lost);
+  function setKpi(id,usd){var el=document.getElementById(id);if(el)el.textContent=fmtUSD(usd);}
+  function setKpiAED(id,usd){var el=document.getElementById(id);if(el)el.textContent=fmtAED(usd*FX);}
+  function setKpiSub(id,t){var el=document.getElementById(id);if(el)el.textContent=t;}
+  function setBar(id,usd,max){var el=document.getElementById(id);if(el&&max>0)el.style.width=Math.min(100,usd/max*100)+'%';}
+  setKpi('kWon',wonUSD);setKpiAED('kWonA',wonUSD);setKpiSub('kWonC',contracted.length+' угод');setBar('kWonBar',wonUSD,allUSD);
+  setKpi('kReceived',recUSD);setKpiAED('kReceivedA',recUSD);
+  setKpi('kAwaiting',awUSD);setKpiAED('kAwaitingA',awUSD);setKpiSub('kAwaitingC',awaiting.length+' угод');
+  // Bank balance from CF
+  var bankEl=document.getElementById('kBank');
+  if(bankEl)bankEl.textContent=bankAED!==null?fmtAED(bankAED):'—';
+  // Row 2: Aggregates
+  var projects=loadProjects();
+  var now=new Date();now.setHours(0,0,0,0);
+  var aggrWork=0,aggrOverdue=0;
+  projects.forEach(function(p){
+    (p.aggregates||[]).forEach(function(ag){
+      if(ag.workStatus!=='Відвантажено'){
+        aggrWork++;
+        if(ag.shipDate&&new Date(ag.shipDate)<now) aggrOverdue++;
+      }
+    });
+  });
+  var awEl=document.getElementById('kAggrWork');if(awEl)awEl.textContent=aggrWork;
+  var owEl=document.getElementById('kOverdue');if(owEl){owEl.textContent=aggrOverdue;owEl.style.color=aggrOverdue>0?'var(--red)':'var(--text)';}
+  setKpi('kPipe',pipeUSD);setKpiAED('kPipeA',pipeUSD);setKpiSub('kPipeC',pipeline.length+' угод');setBar('kPipeBar',pipeUSD,allUSD);
+  setKpi('kLost',lostUSD);setKpiAED('kLostA',lostUSD);setKpiSub('kLostC',lost.length+' угод');
+  // Also update kPause and kWon for old references (keep for archive tab etc)
+  var kPauseEl=document.getElementById('kPause');if(kPauseEl)kPauseEl.textContent=fmtUSD(sumUSD(deals.filter(function(d){return d.status==='pause';})));
+}
 function updateKPIs(){
   var confirmed=deals.filter(function(d){return ['won','awaiting','closed'].indexOf(d.status)>-1;});
   var lost=deals.filter(function(d){return d.status==='lost';});
