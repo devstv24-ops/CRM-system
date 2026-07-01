@@ -554,6 +554,34 @@ function fmtCur(amt,cur){return cur==='AED'?fmtAED(amt):fmtUSD(amt);}
 function dealTotalUSD(d){var raw=(d.items||[]).reduce(function(a,i){return a+(Number(i.total)||0);},0)||d.price||0;return toUSD(raw,d.currency||'USD');}
 function dealPaidUSD(d){var raw=(d.payments||[]).filter(function(p){return p.paid;}).reduce(function(a,p){return a+(Number(p.amount)||0);},0);return toUSD(raw,d.currency||'USD');}
 function updateKPIs(){
+  var contracted=deals.filter(function(d){return ['won','work','contract','invoice','awaiting','closed'].indexOf(d.status)>-1;});
+  var awaiting=deals.filter(function(d){return d.status==='awaiting';});
+  var lost=deals.filter(function(d){return d.status==='lost';});
+  var pipeline=deals.filter(function(d){return ['new','pause'].indexOf(d.status)>-1;});
+  function sumUSD(arr){return arr.reduce(function(a,d){return a+dealTotalUSD(d);},0);}
+  function sumPaidUSD(arr){return arr.reduce(function(a,d){return a+dealPaidUSD(d);},0);}
+  var allUSD=sumUSD(deals.filter(function(d){return d.status!=='lost';}));
+  var wonUSD=sumUSD(contracted);
+  var recUSD=sumPaidUSD(deals);
+  var awUSD=sumUSD(awaiting);
+  var pipeUSD=sumUSD(pipeline);
+  var lostUSD=sumUSD(lost);
+  function safe(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+  function safeBar(id,usd,max){var el=document.getElementById(id);if(el&&max>0)el.style.width=Math.min(100,usd/max*100)+'%';}
+  safe('kWon',fmtUSD(wonUSD));safe('kWonA',fmtAED(wonUSD*FX));safe('kWonC',contracted.length+' угод');safeBar('kWonBar',wonUSD,allUSD);
+  safe('kReceived',fmtUSD(recUSD));safe('kReceivedA',fmtAED(recUSD*FX));
+  safe('kAwaiting',fmtUSD(awUSD));safe('kAwaitingA',fmtAED(awUSD*FX));safe('kAwaitingC',awaiting.length+' угод');
+  var bankEl=document.getElementById('kBank');
+  if(bankEl)bankEl.textContent=bankAED!==null?fmtAED(bankAED):'—';
+  safe('kPipe',fmtUSD(pipeUSD));safe('kPipeA',fmtAED(pipeUSD*FX));safe('kPipeC',pipeline.length+' угод');safeBar('kPipeBar',pipeUSD,allUSD);
+  safe('kLost',fmtUSD(lostUSD));safe('kLostA',fmtAED(lostUSD*FX));safe('kLostC',lost.length+' угод');
+  var projects=loadProjects();
+  var now=new Date();now.setHours(0,0,0,0);
+  var aggrWork=0,aggrOverdue=0;
+  projects.forEach(function(p){(p.aggregates||[]).forEach(function(ag){if(ag.workStatus!=='Відвантажено'){aggrWork++;if(ag.shipDate&&new Date(ag.shipDate)<now)aggrOverdue++;}});});
+  safe('kAggrWork',String(aggrWork));
+  var owEl=document.getElementById('kOverdue');if(owEl){owEl.textContent=String(aggrOverdue);owEl.style.color=aggrOverdue>0?'var(--red)':'var(--text)';}
+}unction updateKPIs(){
   // Row 1: Contracts signed / Received / Awaiting / Bank
   var contracted=deals.filter(function(d){return ['won','work','contract','invoice','awaiting','closed'].indexOf(d.status)>-1;});
   var awaiting=deals.filter(function(d){return d.status==='awaiting';});
@@ -597,26 +625,7 @@ function updateKPIs(){
   // Also update kPause and kWon for old references (keep for archive tab etc)
   var kPauseEl=document.getElementById('kPause');if(kPauseEl)kPauseEl.textContent=fmtUSD(sumUSD(deals.filter(function(d){return d.status==='pause';})));
 }
-function updateKPIs(){
-  var confirmed=deals.filter(function(d){return ['won','awaiting','closed'].indexOf(d.status)>-1;});
-  var lost=deals.filter(function(d){return d.status==='lost';});
-  var pause=deals.filter(function(d){return d.status==='pause';});
-  var pipe=deals.filter(function(d){return d.status==='new';});
-  function sUSD(arr){return arr.reduce(function(a,d){return a+dealTotalUSD(d);},0);}
-  var weighted=deals.filter(function(d){return ['lost','closed'].indexOf(d.status)<0;}).reduce(function(a,d){return a+dealTotalUSD(d)*(Number(d.prob)||0)/100;},0);
-  var allUSD=sUSD(deals.filter(function(d){return d.status!=='lost';}));
-  var sets=[[confirmed,'kWon','kWonA','kWonC','kWonBar'],[pipe,'kPipe','kPipeA','kPipeC','kPipeBar'],[pause,'kPause','kPauseA','kPauseC','kPauseBar'],[lost,'kLost','kLostA','kLostC','kLostBar']];
-  sets.forEach(function(s){
-    var u=sUSD(s[0]);
-    document.getElementById(s[1]).textContent=fmtUSD(u);
-    document.getElementById(s[2]).textContent=fmtAED(u*FX);
-    document.getElementById(s[3]).textContent=s[0].length+' \u0443\u0433\u043e\u0434';
-    var bar=document.getElementById(s[4]);
-    if(bar&&allUSD>0)bar.style.width=Math.min(100,u/allUSD*100)+'%';
-  });
-  document.getElementById('kW').textContent=fmtUSD(weighted);
-  document.getElementById('kWA').textContent=fmtAED(weighted*FX);
-}
+unction updateKPIs(){
 
 function render(){
   updateKPIs();
