@@ -357,6 +357,7 @@ var cfOpenWeeks=new Set([0]); // week 0 = current week open by default
 var cfScenarioDisabled={};
 var cfEditId=null;
 var minSafeBalance=localStorage.getItem("cf_min_safe")?parseFloat(localStorage.getItem("cf_min_safe")):50000;
+var cfWeeksForward=localStorage.getItem("cf_weeks_forward")?parseInt(localStorage.getItem("cf_weeks_forward")):16;
 
 var quickActualTxId=null;
 
@@ -1028,7 +1029,7 @@ function setBankManual(){
 function renderCF(){
   var el=document.getElementById('cfContent');
   var crmPays=getCrmAllPays();var allTxs=cfTxs.concat(crmPays);
-  var WPAST=2,WFUT=16;var bank=bankAED!==null?bankAED:0;
+  var WPAST=2,WFUT=cfWeeksForward;var bank=bankAED!==null?bankAED:0;
   var today=new Date();today.setHours(0,0,0,0);
   var totalIn4=0,totalOut4=0;var weekData=[];
 
@@ -1098,6 +1099,13 @@ function renderCF(){
       wIn:wd.wInAll,wOut:wd.wOutAll,wDebt:wd.wDebtAll,
       balStart:balStart,balance:balStart+pastNet,isPast:true};
   }
+  var weeksToYearEnd=Math.ceil((new Date(today.getFullYear(),11,31)-today)/(7*86400000))+1;
+  var horizonSel='<select onchange="setCfWeeksForward(this.value)" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border,#D8DCE5);font-family:var(--font);font-size:12px;font-weight:600;color:var(--text,#1A1D26);background:#fff;cursor:pointer;margin-left:8px">'
+    +'<option value="16"'+(cfWeeksForward===16?' selected':'')+'>16 \u0442\u0438\u0436\u043d\u0456\u0432</option>'
+    +'<option value="26"'+(cfWeeksForward===26?' selected':'')+'>26 \u0442\u0438\u0436\u043d\u0456\u0432</option>'
+    +'<option value="'+weeksToYearEnd+'"'+(cfWeeksForward===weeksToYearEnd?' selected':'')+'>\u0414\u043e \u043a\u0456\u043d\u0446\u044f \u0440\u043e\u043a\u0443</option>'
+    +'<option value="52"'+(cfWeeksForward===52?' selected':'')+'>52 \u0442\u0438\u0436\u043d\u0456 (\u0440\u0456\u043a)</option>'
+    +'</select>';
   var bank0=bankAED!==null?bankAED:0;var net4=weekData[WPAST+3]?weekData[WPAST+3].balance:bank0;var months=getCfMonths();
   var monthBtns='<button class="cf-mbtn'+(cfMonth==='all'?' active':'')+"\" onclick=\"setCfMonth('all')\">\u0412\u0441\u0456</button>";
   months.forEach(function(m){var lbl=new Date(m+'-01').toLocaleDateString('uk',{month:'short',year:'2-digit'});monthBtns+='<button class="cf-mbtn'+(cfMonth===m?' active':'')+"\" onclick=\"setCfMonth('"+m+"')\">"+lbl+'</button>';});
@@ -1115,7 +1123,7 @@ function renderCF(){
   var DONUT_COLORS=['#2563EB','#7C3AED','#059669','#D97706','#DC2626','#0D9488','#EA580C'];
 
   var html='<div>'
-    +'<div class="cf-controls"><div class="cf-months">'+monthBtns+'</div><button class="cf-print-btn" onclick="window.print()">\u2b07 \u0414\u0440\u0443\u043a / PDF</button><button class="cf-add-btn" onclick="openCfModal()">+ \u0422\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044f</button><button class="cf-add-btn" style="background:var(--accent2);margin-left:4px" onclick="openScenario()">\ud83d\udcca \u0421\u0446\u0435\u043d\u0430\u0440\u0456\u0439</button></div>'
+    +'<div class="cf-controls"><div class="cf-months">'+monthBtns+horizonSel+'</div><button class="cf-print-btn" onclick="window.print()">\u2b07 \u0414\u0440\u0443\u043a / PDF</button><button class="cf-add-btn" onclick="openCfModal()">+ \u0422\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044f</button><button class="cf-add-btn" style="background:var(--accent2);margin-left:4px" onclick="openScenario()">\ud83d\udcca \u0421\u0446\u0435\u043d\u0430\u0440\u0456\u0439</button></div>'
     +'<div class="cf-kpi-grid">'
     +'<div class="cf-kpi bank" onclick="setBankManual()" title="\u041d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c \u0449\u043e\u0431 \u043e\u043d\u043e\u0432\u0438\u0442\u0438"><div class="cf-kpi-lbl">Bank_AED \u0437\u0430\u0440\u0430\u0437 \u270e</div><div class="cf-kpi-val v-teal">'+(bankAED!==null?fmtAED(bank0):'\u2014 \u043d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c')+'</div><div class="cf-kpi-sub">'+(bankAED!==null?'\u2248 '+fmtUSD(bank0/FX):'\u0432\u0432\u0435\u0434\u0456\u0442\u044c \u0437\u0430\u043b\u0438\u0448\u043e\u043a')+'</div></div>'
     +'<div class="cf-kpi inc"><div class="cf-kpi-lbl">\u041d\u0430\u0434\u0445\u043e\u0434\u0436\u0435\u043d\u043d\u044f (4 \u0442\u0438\u0436\u043d\u0456)</div><div class="cf-kpi-val v-blue">'+fmtAED(totalIn4)+'</div><div class="cf-kpi-sub">\u2248 '+fmtUSD(totalIn4/FX)+'</div></div>'
@@ -1727,6 +1735,7 @@ function toggleCfCritical(id){
 function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el){el.classList.toggle('open');if(el.classList.contains('open'))cfOpenWeeks.add(w);else cfOpenWeeks.delete(w);}}
 function delCfTx(id){if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044e?'))return;cfTxs=cfTxs.filter(function(t){return t.id!==id;});saveCfLocal();renderCF();}
 function dupCfTx(id){var tx=cfTxs.find(function(t){return t.id===id;});if(!tx)return;var copy=Object.assign({},tx,{id:Date.now().toString()+Math.random().toString(36).slice(2),created:new Date().toISOString(),actual:undefined,status:'plan'});cfEditId=null;openCfModal(copy.date,copy.type);setTimeout(function(){var d=document.getElementById('cfDesc');var g=document.getElementById('cfGroup');var c=document.getElementById('cfCategory');var a=document.getElementById('cfAmount');var n=document.getElementById('cfNote');var cr=document.getElementById('cfCritical');if(d)d.value=copy.desc||'';if(g&&copy.group)g.value=copy.group;if(c&&copy.category)c.value=copy.category;if(a)a.value=copy.amount||'';if(n)n.value=copy.note||'';if(cr)cr.checked=!!copy.critical;setCfCur(copy.currency||'AED');updateCfStatus();var titleEl=document.querySelector('.cf-mtitle');if(titleEl)titleEl.textContent='\u0414\u0443\u0431\u043b\u0456\u043a\u0430\u0442 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u0457';},100);}
+function setCfWeeksForward(v){cfWeeksForward=parseInt(v)||16;localStorage.setItem('cf_weeks_forward',String(cfWeeksForward));renderCF();}
 function setCfMonth(m){cfMonth=m;renderCF();}
 
 function editCfTx(id){
