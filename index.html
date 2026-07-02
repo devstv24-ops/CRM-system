@@ -512,12 +512,10 @@ async function deleteDealFromDb(dbId){
   if(r.error){console.error('deleteDealFromDb:',r.error);alert('Не вдалося видалити угоду в базі: '+r.error.message);}
 }
 async function syncProjectToDb(d){
-  var existing=await sb.from('projects').select('id,aggregates').eq('project_num',d.projectNum).single();
-  if(existing.data){
-    await sb.from('projects').update({status:d.status,client:d.client,service_type:d.serviceType,description:d.desc}).eq('project_num',d.projectNum);
-  } else {
-    await sb.from('projects').insert({project_num:d.projectNum,client:d.client,deal_id:typeof d.id==='number'?d.id:null,status:d.status,service_type:d.serviceType,description:d.desc,aggregates:[]});
-  }
+  try{
+    var r=await sb.from('projects').upsert({project_num:d.projectNum,client:d.client,status:d.status,service_type:d.serviceType,description:d.desc},{onConflict:'project_num'});
+    if(r.error) console.error('syncProjectToDb:',r.error);
+  }catch(e){console.error('syncProjectToDb:',e);}
 }
 async function saveCfTxToDb(tx){
   var row={tx_date:tx.date,type:tx.type,description:tx.desc,amount:tx.amount,currency:tx.currency||'AED',status:tx.status||'plan',is_critical:tx.isCritical||false,note:tx.note||''};
@@ -1771,7 +1769,7 @@ function renderRegistry(){
   var allProjects=syncProjectsFromDeals();
   allProjects.sort(function(a,b){return (b.projectNum||'').localeCompare(a.projectNum||'');});
   var projects=allProjects.filter(isActiveProject);
-  var archived=allProjects.filter(function(p){return !isActiveProject(p);});
+  var archived=allProjects.filter(function(p){return p.status==='closed';});
   var kpi=getRegKPIs(projects);  // active only
   var weeks=buildTimeline(projects);  // active only
   var now=new Date();now.setHours(0,0,0,0);
@@ -1897,6 +1895,17 @@ function renderAggrCard(pnum,ai,ag,now){
   return h;
 }
 function toggleRegCard(pnum){var card=document.getElementById('regCard_'+pnum);if(card)card.classList.toggle('open');}
+var _aggrSaveTimers={};
+function scheduleAggrSave(pnum){
+  if(_aggrSaveTimers[pnum]) clearTimeout(_aggrSaveTimers[pnum]);
+  _aggrSaveTimers[pnum]=setTimeout(function(){saveProjectAggr(pnum);},900);
+}
+window.addEventListener('beforeunload',function(){
+  Object.keys(_aggrSaveTimers).forEach(function(pnum){
+    clearTimeout(_aggrSaveTimers[pnum]);
+    saveProjectAggr(pnum);
+  });
+});
 function addAggr(pnum){
   var projects=loadProjects();
   var idx=findProjectIdx(projects,pnum);
@@ -1907,6 +1916,7 @@ function addAggr(pnum){
   var now=new Date();now.setHours(0,0,0,0);
   var container=document.getElementById('aggrCards_'+pnum);
   if(container){var ai=projects[idx].aggregates.length-1;container.insertAdjacentHTML('beforeend',renderAggrCard(pnum,ai,projects[idx].aggregates[ai],now));}
+  scheduleAggrSave(pnum);
 }
 function updAggr(pnum,ai,field,val){
   var projects=loadProjects();
@@ -1914,6 +1924,7 @@ function updAggr(pnum,ai,field,val){
   if(idx<0||!projects[idx].aggregates[ai]) return;
   projects[idx].aggregates[ai][field]=field==='qty'?(parseInt(val)||1):val;
   saveProjects(projects);
+  scheduleAggrSave(pnum);
 }
 function updAggrTypeHeader(selectEl,pnum,ai){
   var span=document.getElementById('aggrType_'+pnum+'_'+ai);
@@ -1938,8 +1949,10 @@ function delAggr(pnum,ai){
     var now=new Date();now.setHours(0,0,0,0);
     container.innerHTML=projects[idx].aggregates.map(function(ag,ai2){return renderAggrCard(pnum,ai2,ag,now);}).join('');
   }
+  scheduleAggrSave(pnum);
 }
 async function saveProjectAggr(pnum){
+  if(_aggrSaveTimers[pnum]){clearTimeout(_aggrSaveTimers[pnum]);delete _aggrSaveTimers[pnum];}
   var btn=document.getElementById('regSaveBtn_'+pnum);
   if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f...';btn.disabled=true;btn.style.background='';}
   var projects=loadProjects();
