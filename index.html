@@ -480,38 +480,36 @@ async function loadFromSupabase(){
   hide();
 }
 function dbToDeal(row){
-  return {id:row.id,client:row.client,currency:row.currency||'USD',status:row.status||'new',serviceType:row.service_type,desc:row.description,price:row.price||0,prob:row.probability||50,date:row.deal_date,contact:row.contact,notes:row.notes,projectNum:row.project_num,items:row.items||[],payments:row.payments||[]};
+  return {id:row.id,_dbId:row.id,client:row.client,currency:row.currency||'USD',status:row.status||'new',serviceType:row.service_type,desc:row.description,price:row.price||0,prob:row.probability||50,date:row.deal_date,contact:row.contact,notes:row.notes,projectNum:row.project_num,items:row.items||[],payments:row.payments||[]};
 }
 function dealToDb(d){
   return {client:d.client,currency:d.currency||'USD',status:d.status,service_type:d.serviceType,description:d.desc,price:d.price||0,probability:d.prob||50,deal_date:d.date||null,contact:d.contact,notes:d.notes,project_num:d.projectNum,items:d.items||[],payments:d.payments||[]};
 }
-async function persist(){
-  setBadge('Збереження...','saving');
-  if(!currentUser){setBadge('Не авторизовано','err');return;}
-  try{
-    var deal=deals.find(function(d){return d.id===editId;})||deals[0];
-    // handled in saveDeal directly
-    setBadge('Збережено ✓','ok');
-  } catch(e){setBadge('Помилка','err');console.error(e);}
-}
 async function saveDealToDb(d){
   setBadge('Збереження...','saving');
+  if(!sb||!currentUser){setBadge('Не авторизовано','err');return;}
   var row=dealToDb(d);
   var r;
-  if(typeof d.id==='number'&&d.id>0&&String(d.id).length>6){
-    // existing record in DB (numeric id from Supabase)
-    r=await sb.from('deals').update(row).eq('id',d.id).select().single();
-  } else {
-    r=await sb.from('deals').insert(row).select().single();
-    if(r.data) d.id=r.data.id;
+  try{
+    if(d._dbId){
+      r=await sb.from('deals').update(row).eq('id',d._dbId).select().single();
+    } else {
+      r=await sb.from('deals').insert(row).select().single();
+      if(r.data){ d._dbId=r.data.id; d.id=r.data.id; }
+    }
+    if(r.error) throw r.error;
+    setBadge('Збережено ✓','ok');
+    if(d.projectNum) await syncProjectToDb(d);
+  } catch(e){
+    setBadge('Помилка збереження','err');
+    console.error('saveDealToDb:',e);
+    alert('Не вдалося зберегти угоду в базі: '+(e.message||e));
   }
-  if(r.error){setBadge('Помилка','err');console.error(r.error);return;}
-  setBadge('Збережено ✓','ok');
-  // Sync project if has projectNum
-  if(d.projectNum) await syncProjectToDb(d);
 }
-async function deleteDealFromDb(id){
-  await sb.from('deals').delete().eq('id',id);
+async function deleteDealFromDb(dbId){
+  if(!sb||!dbId) return;
+  var r=await sb.from('deals').delete().eq('id',dbId);
+  if(r.error){console.error('deleteDealFromDb:',r.error);alert('Не вдалося видалити угоду в базі: '+r.error.message);}
 }
 async function syncProjectToDb(d){
   var existing=await sb.from('projects').select('id,aggregates').eq('project_num',d.projectNum).single();
@@ -912,10 +910,16 @@ function saveDeal(){
   var client=document.getElementById('fClient').value.trim();if(!client){document.getElementById('fClient').focus();return;}
   var itemsTotal=editItems.reduce(function(a,it){return a+(it.total||0);},0);
   var d={id:editId||Date.now(),client:client,currency:editCur,status:document.getElementById('fStatus').value,serviceType:document.getElementById('fServiceType').value,desc:document.getElementById('fDesc').value.trim(),price:itemsTotal||Number(document.getElementById('fPrice').value)||0,prob:Number(document.getElementById('fProb').value)||PROBS[document.getElementById('fStatus').value],date:document.getElementById('fDate').value,contact:document.getElementById('fContact').value.trim(),notes:document.getElementById('fNotes').value.trim(),projectNum:document.getElementById('fProjectNum').value||'',items:editItems,payments:editPayments};
-  if(editId){var idx=deals.findIndex(function(x){return x.id===editId;});deals[idx]=d;}else deals.unshift(d);
+  if(editId){var idx=deals.findIndex(function(x){return x.id===editId;});if(idx>-1)d._dbId=deals[idx]._dbId;deals[idx]=d;}else deals.unshift(d);
   saveDealToDb(d);render();closeModal();
 }
-function delDeal(id){if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0443\u0433\u043e\u0434\u0443?'))return;deals=deals.filter(function(d){return d.id!==id;});persist();render();}
+function delDeal(id){
+  if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0443\u0433\u043e\u0434\u0443?'))return;
+  var d=deals.find(function(x){return x.id===id;});
+  deals=deals.filter(function(x){return x.id!==id;});
+  render();
+  if(d&&d._dbId) deleteDealFromDb(d._dbId);
+}
 
 /* CASH FLOW */
 function txAED(tx){var raw=parseFloat(tx.amount)||0;return tx.currency==='USD'?raw*FX:raw;}
@@ -1690,12 +1694,13 @@ async function loadProjectsFromSupabase(){
   if(!sb) return;
   try{
     var r=await sb.from('projects').select('*');
-    if(r.error||!r.data||!r.data.length) return;
+    if(r.error||!r.data) return;
     var local=loadProjects();
     var localMap={};
     local.forEach(function(p){localMap[p.projectNum]=p;});
     r.data.forEach(function(row){
       var pnum=row.project_num;
+      if(!pnum) return;
       if(localMap[pnum]){
         if(row.aggregates&&row.aggregates.length>0) localMap[pnum].aggregates=row.aggregates;
       } else {
@@ -1703,27 +1708,7 @@ async function loadProjectsFromSupabase(){
       }
     });
     saveProjects(Object.values(localMap));
-  }catch(e){console.error('loadProjects:',e);}
-}
-async function loadProjectsFromSupabase(){
-  if(!sb) return;
-  var r=await sb.from('projects').select('*');
-  if(r.error||!r.data||!r.data.length) return;
-  var local=loadProjects();
-  var localMap={};
-  local.forEach(function(p){localMap[p.projectNum]=p;});
-  r.data.forEach(function(row){
-    var pnum=row.project_num;
-    if(localMap[pnum]){
-      // Merge: Supabase aggregates override if they exist
-      if(row.aggregates&&row.aggregates.length>0){
-        localMap[pnum].aggregates=row.aggregates;
-      }
-    }
-  });
-  var merged=Object.values(localMap);
-  saveProjects(merged);
-  return merged;
+  }catch(e){console.error('loadProjectsFromSupabase:',e);}
 }
 function syncProjectsFromDeals(){
   var projects=loadProjects();
@@ -1818,16 +1803,18 @@ function renderRegistry(){
   if(!projects.length){
     cardsHtml='<div class="reg-empty"><div style="font-size:32px;margin-bottom:10px">\ud83d\udccb</div><div style="font-weight:600">\u0420\u0435\u0454\u0441\u0442\u0440 \u043f\u043e\u0440\u043e\u0436\u043d\u0456\u0439</div></div>';
   } else {
-    projects.forEach(function(p,_pi){
-      var pi=allProjects.indexOf(p);
+    projects.forEach(function(p){
+      if(!p.projectNum) return;
+      var pnum=p.projectNum;
+      var pidAttr="'"+pnum+"'";
       var aggrs=p.aggregates||[];
       var total=aggrs.length;
       var done=aggrs.filter(function(a){return a.workStatus==='\u0412\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e'||a.workStatus==='\u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e';}).length;
       var pct=total>0?Math.round(done/total*100):0;
       var hasOverdue=aggrs.some(function(a){return a.shipDate&&new Date(a.shipDate)<now&&a.workStatus!=='\u0412\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e';});
       var statusBadge='<span class="badge '+(p.status||'new')+'">'+(LABELS[p.status]||p.status||'\u2014')+'</span>';
-      cardsHtml+='<div class="reg-project-card" id="regCard'+pi+'">'
-        +'<div class="reg-project-hd" onclick="toggleRegCard('+pi+')">'
+      cardsHtml+='<div class="reg-project-card" id="regCard_'+pnum+'">'
+        +'<div class="reg-project-hd" onclick="toggleRegCard('+pidAttr+')">'
         +'<div class="reg-project-pnum">'+esc(p.projectNum)+'</div>'
         +(hasOverdue?'<span style="font-size:16px" title="\u0454 \u043f\u0440\u043e\u0441\u0442\u0440\u043e\u0447\u0435\u043d\u0456">\ud83d\udea8</span>':'')
         +'<div class="reg-project-info"><div class="reg-project-client">'+esc(p.client)+'</div><div class="reg-project-desc">'+(p.serviceType?esc(p.serviceType)+' \u00b7 ':'')+esc((p.desc||'').substring(0,60))+'</div></div>'
@@ -1835,10 +1822,10 @@ function renderRegistry(){
         +(total>0?'<div style="display:flex;align-items:center;gap:6px"><div class="reg-progress-wrap"><div class="reg-progress-fill" style="width:'+pct+'%"></div></div><span class="reg-progress-lbl">'+done+'/'+total+'</span></div>':'')
         +'<div style="color:var(--text3);font-size:10px">\u25bc</div></div>'
         +'</div>'
-        +'<div class="reg-project-body"><div class="reg-aggr-cards" id="aggrCards'+pi+'">'
-        +aggrs.map(function(ag,ai){return renderAggrCard(pi,ai,ag,now);}).join('')
+        +'<div class="reg-project-body"><div class="reg-aggr-cards" id="aggrCards_'+pnum+'">'
+        +aggrs.map(function(ag,ai){return renderAggrCard(pnum,ai,ag,now);}).join('')
         +'</div>'
-        +'<div class="reg-save-row"><button class="reg-add-aggr-btn" onclick="addAggr('+pi+')">\u002b \u0414\u043e\u0434\u0430\u0442\u0438 \u0430\u0433\u0440\u0435\u0433\u0430\u0442</button><button class="reg-save-btn2" id="regSaveBtn'+pi+'" onclick="saveProjectAggr('+pi+')">\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438</button></div>'
+        +'<div class="reg-save-row"><button class="reg-add-aggr-btn" onclick="addAggr('+pidAttr+')">\u002b \u0414\u043e\u0434\u0430\u0442\u0438 \u0430\u0433\u0440\u0435\u0433\u0430\u0442</button><button class="reg-save-btn2" id="regSaveBtn_'+pnum+'" onclick="saveProjectAggr('+pidAttr+')">\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438</button></div>'
         +'</div></div>';
     });
   }
@@ -1852,21 +1839,23 @@ function renderRegistry(){
       +'<span>Архів проектів ('+archived.length+')</span>'
       +'</button>';
     if(archOpen){
-      archived.forEach(function(p,pi){
-        var realPi=allProjects.indexOf(p);
+      archived.forEach(function(p){
+        if(!p.projectNum) return;
+        var pnum=p.projectNum;
+        var pidAttr="'"+pnum+"'";
         var aggrs=p.aggregates||[];
         var statusBadge='<span class="badge '+(p.status||'new')+'">'+(LABELS[p.status]||p.status||'—')+'</span>';
-        archHtml+='<div class="reg-project-card" id="regCard'+realPi+'" style="opacity:.75">'
-          +'<div class="reg-project-hd" onclick="toggleRegCard('+realPi+')">'
+        archHtml+='<div class="reg-project-card" id="regCard_'+pnum+'" style="opacity:.75">'
+          +'<div class="reg-project-hd" onclick="toggleRegCard('+pidAttr+')">'
           +'<div class="reg-project-pnum">'+esc(p.projectNum)+'</div>'
           +'<div class="reg-project-info"><div class="reg-project-client">'+esc(p.client)+'</div><div class="reg-project-desc">'+(p.serviceType?esc(p.serviceType)+' · ':'')+esc((p.desc||'').substring(0,60))+'</div></div>'
           +'<div class="reg-project-meta">'+statusBadge
           +'<div style="color:var(--text3);font-size:10px">▼</div></div>'
           +'</div>'
-          +'<div class="reg-project-body"><div class="reg-aggr-cards" id="aggrCards'+realPi+'">'
-          +aggrs.map(function(ag,ai){return renderAggrCard(realPi,ai,ag,now);}).join('')
+          +'<div class="reg-project-body"><div class="reg-aggr-cards" id="aggrCards_'+pnum+'">'
+          +aggrs.map(function(ag,ai){return renderAggrCard(pnum,ai,ag,now);}).join('')
           +'</div>'
-          +'<div class="reg-save-row"><button class="reg-add-aggr-btn" onclick="addAggr('+realPi+')">+ Додати агрегат</button><button class="reg-save-btn2" id="regSaveBtn'+realPi+'" onclick="saveProjectAggr('+realPi+')">Зберегти</button></div>'
+          +'<div class="reg-save-row"><button class="reg-add-aggr-btn" onclick="addAggr('+pidAttr+')">+ Додати агрегат</button><button class="reg-save-btn2" id="regSaveBtn_'+pnum+'" onclick="saveProjectAggr('+pidAttr+')">Зберегти</button></div>'
           +'</div></div>';
       });
     }
@@ -1875,7 +1864,11 @@ function renderRegistry(){
 
   el.innerHTML=kpiHtml+tlHtml+hdrHtml+cardsHtml+archHtml;
 }
-function renderAggrCard(pi,ai,ag,now){
+function findProjectIdx(projects,pnum){
+  for(var i=0;i<projects.length;i++){ if(projects[i].projectNum===pnum) return i; }
+  return -1;
+}
+function renderAggrCard(pnum,ai,ag,now){
   var wsColor=WS_COLORS[ag.workStatus]||'#CDD2DC';
   var isOverdue=ag.shipDate&&new Date(ag.shipDate)<(now||new Date())&&ag.workStatus!=='\u0412\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e';
   var aggrTypes=['\u041a\u0410\u0423-30\u0411','\u0420\u0410-60\u0411','\u041a\u0410\u0423-115\u0410\u041c','\u0423\u0413-50','\u0406\u043d\u0448\u0438\u0439'];
@@ -1884,42 +1877,46 @@ function renderAggrCard(pi,ai,ag,now){
   var typeOpts=aggrTypes.map(function(t){return '<option'+(ag.type===t?' selected':'')+'>'+esc(t)+'</option>';}).join('');
   var stOpts=workStatuses.map(function(s){return '<option'+(ag.workStatus===s?' selected':'')+'>'+esc(s)+'</option>';}).join('');
   var prioOpts=priorities.map(function(s){return '<option'+(ag.priority===s?' selected':'')+'>'+esc(s)+'</option>';}).join('');
-  var h='<div class="reg-aggr-card" id="aggrCard'+pi+'_'+ai+'" style="'+(isOverdue?'border-color:#FECACA;':'')+'">';
+  var pidAttr="'"+pnum+"'";
+  var h='<div class="reg-aggr-card" id="aggrCard_'+pnum+'_'+ai+'" style="'+(isOverdue?'border-color:#FECACA;':'')+'">';
   h+='<div class="reg-aggr-bar" style="background:'+wsColor+'"></div>';
   h+='<div class="reg-aggr-main"><div class="reg-aggr-top">';
-  h+='<span class="reg-aggr-type" id="aggrType'+pi+'_'+ai+'">'+esc(ag.type||'\u041a\u0410\u0423-115\u0410\u041c')+'</span>';
+  h+='<span class="reg-aggr-type" id="aggrType_'+pnum+'_'+ai+'">'+esc(ag.type||'\u041a\u0410\u0423-115\u0410\u041c')+'</span>';
   h+=(ag.serial?'<span class="reg-aggr-serial">\u2116\u00a0'+esc(ag.serial)+'</span>':'<span style="font-size:11px;color:var(--text3);font-style:italic">\u0437\u0430\u0432. \u2116 \u043d\u0435 \u0432\u043d\u0435\u0441\u0435\u043d\u043e</span>');
   h+=(isOverdue?'<span style="font-size:10px;background:#FEF2F2;color:#DC2626;padding:2px 6px;border-radius:4px;font-weight:700">\u041f\u0420\u041e\u0421\u0422\u0420\u041e\u0427\u0415\u041d\u041e</span>':'');
   h+='</div><div class="reg-aggr-fields">';
-  h+='<div class="reg-aggr-field"><label>\u0422\u0438\u043f</label><select onchange="updAggr('+pi+','+ai+',\'type\',this.value);updAggrTypeHeader(this,'+pi+','+ai+')">'+typeOpts+'</select></div>';
-  h+='<div class="reg-aggr-field"><label>\u0417\u0430\u0432. \u2116</label><input value="'+esc(ag.serial||'')+'" oninput="updAggr('+pi+','+ai+',\'serial\',this.value)" placeholder="20920390"></div>';
-  h+='<div class="reg-aggr-field"><label>\u041a-\u0442\u044c</label><input type="number" value="'+(ag.qty||1)+'" oninput="updAggr('+pi+','+ai+',\'qty\',this.value)" min="1"></div>';
-  h+='<div class="reg-aggr-field"><label>\u0421\u0442\u0430\u0442\u0443\u0441</label><select onchange="updAggr('+pi+','+ai+',\'workStatus\',this.value);updAggrBarColor(this)">'+stOpts+'</select></div>';
-  h+='<div class="reg-aggr-field"><label>\u041f\u043b\u0430\u043d. \u0432\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f</label><input type="date" value="'+(ag.shipDate||'')+'" onchange="updAggr('+pi+','+ai+',\'shipDate\',this.value)"></div>';
-  h+='<div class="reg-aggr-field"><label>\u041f\u0440\u0456\u043e\u0440\u0438\u0442\u0435\u0442</label><select onchange="updAggr('+pi+','+ai+',\'priority\',this.value)">'+prioOpts+'</select></div>';
-  h+='<div class="reg-aggr-field" style="grid-column:span 2"><label>\u041d\u043e\u0442\u0430\u0442\u043a\u0430</label><input value="'+esc(ag.note||'')+'" oninput="updAggr('+pi+','+ai+',\'note\',this.value)" placeholder="\u0434\u043e\u0434\u0430\u0442\u043a\u043e\u0432\u043e"></div>';
-  h+='</div></div><div class="reg-aggr-actions"><button class="reg-aggr-del" onclick="delAggr('+pi+','+ai+')">\u2715</button></div></div>';
+  h+='<div class="reg-aggr-field"><label>\u0422\u0438\u043f</label><select onchange="updAggr('+pidAttr+','+ai+',\'type\',this.value);updAggrTypeHeader(this,'+pidAttr+','+ai+')">'+typeOpts+'</select></div>';
+  h+='<div class="reg-aggr-field"><label>\u0417\u0430\u0432. \u2116</label><input value="'+esc(ag.serial||'')+'" oninput="updAggr('+pidAttr+','+ai+',\'serial\',this.value)" placeholder="20920390"></div>';
+  h+='<div class="reg-aggr-field"><label>\u041a-\u0442\u044c</label><input type="number" value="'+(ag.qty||1)+'" oninput="updAggr('+pidAttr+','+ai+',\'qty\',this.value)" min="1"></div>';
+  h+='<div class="reg-aggr-field"><label>\u0421\u0442\u0430\u0442\u0443\u0441</label><select onchange="updAggr('+pidAttr+','+ai+',\'workStatus\',this.value);updAggrBarColor(this)">'+stOpts+'</select></div>';
+  h+='<div class="reg-aggr-field"><label>\u041f\u043b\u0430\u043d. \u0432\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f</label><input type="date" value="'+(ag.shipDate||'')+'" onchange="updAggr('+pidAttr+','+ai+',\'shipDate\',this.value)"></div>';
+  h+='<div class="reg-aggr-field"><label>\u0424\u0430\u043a\u0442. \u0432\u0456\u0434\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f</label><input type="date" value="'+(ag.shipDateActual||'')+'" onchange="updAggr('+pidAttr+','+ai+',\'shipDateActual\',this.value)"></div>';
+  h+='<div class="reg-aggr-field"><label>\u041f\u0440\u0456\u043e\u0440\u0438\u0442\u0435\u0442</label><select onchange="updAggr('+pidAttr+','+ai+',\'priority\',this.value)">'+prioOpts+'</select></div>';
+  h+='<div class="reg-aggr-field" style="grid-column:span 2"><label>\u041d\u043e\u0442\u0430\u0442\u043a\u0430</label><input value="'+esc(ag.note||'')+'" oninput="updAggr('+pidAttr+','+ai+',\'note\',this.value)" placeholder="\u0434\u043e\u0434\u0430\u0442\u043a\u043e\u0432\u043e"></div>';
+  h+='</div></div><div class="reg-aggr-actions"><button class="reg-aggr-del" onclick="delAggr('+pidAttr+','+ai+')">\u2715</button></div></div>';
   return h;
 }
-function toggleRegCard(pi){var card=document.getElementById('regCard'+pi);if(card)card.classList.toggle('open');}
-function addAggr(pi){
+function toggleRegCard(pnum){var card=document.getElementById('regCard_'+pnum);if(card)card.classList.toggle('open');}
+function addAggr(pnum){
   var projects=loadProjects();
-  if(!projects[pi]) return;
-  if(!projects[pi].aggregates) projects[pi].aggregates=[];
-  projects[pi].aggregates.push({type:'\u041a\u0410\u0423-115\u0410\u041c',serial:'',qty:1,workStatus:'\u041f\u0440\u0438\u0439\u043d\u044f\u0442\u0438\u0439',priority:'\ud83d\udfe1 \u041d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u043e',shipDate:'',note:''});
+  var idx=findProjectIdx(projects,pnum);
+  if(idx<0) return;
+  if(!projects[idx].aggregates) projects[idx].aggregates=[];
+  projects[idx].aggregates.push({type:'\u041a\u0410\u0423-115\u0410\u041c',serial:'',qty:1,workStatus:'\u041f\u0440\u0438\u0439\u043d\u044f\u0442\u0438\u0439',priority:'\ud83d\udfe1 \u041d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u043e',shipDate:'',shipDateActual:'',note:''});
   saveProjects(projects);
   var now=new Date();now.setHours(0,0,0,0);
-  var container=document.getElementById('aggrCards'+pi);
-  if(container){var ai=projects[pi].aggregates.length-1;container.insertAdjacentHTML('beforeend',renderAggrCard(pi,ai,projects[pi].aggregates[ai],now));}
+  var container=document.getElementById('aggrCards_'+pnum);
+  if(container){var ai=projects[idx].aggregates.length-1;container.insertAdjacentHTML('beforeend',renderAggrCard(pnum,ai,projects[idx].aggregates[ai],now));}
 }
-function updAggr(pi,ai,field,val){
+function updAggr(pnum,ai,field,val){
   var projects=loadProjects();
-  if(!projects[pi]||!projects[pi].aggregates[ai]) return;
-  projects[pi].aggregates[ai][field]=field==='qty'?parseInt(val)||1:val;
+  var idx=findProjectIdx(projects,pnum);
+  if(idx<0||!projects[idx].aggregates[ai]) return;
+  projects[idx].aggregates[ai][field]=field==='qty'?(parseInt(val)||1):val;
   saveProjects(projects);
 }
-function updAggrTypeHeader(selectEl,pi,ai){
-  var span=document.getElementById('aggrType'+pi+'_'+ai);
+function updAggrTypeHeader(selectEl,pnum,ai){
+  var span=document.getElementById('aggrType_'+pnum+'_'+ai);
   if(span) span.textContent=selectEl.value;
 }
 function updAggrBarColor(selectEl){
@@ -1930,39 +1927,35 @@ function updAggrBarColor(selectEl){
   var colors={'Прийнятий':'#2563EB','В роботі':'#D97706','Завершено':'#0D9488','Відвантажено':'#059669'};
   if(bar) bar.style.background=colors[val]||'#CDD2DC';
 }
-function delAggr(pi,ai){
+function delAggr(pnum,ai){
   var projects=loadProjects();
-  if(!projects[pi]) return;
-  projects[pi].aggregates.splice(ai,1);
+  var idx=findProjectIdx(projects,pnum);
+  if(idx<0) return;
+  projects[idx].aggregates.splice(ai,1);
   saveProjects(projects);
-  // Re-render only the aggregates list, keep card open
-  var container=document.getElementById('aggrCards'+pi);
+  var container=document.getElementById('aggrCards_'+pnum);
   if(container){
     var now=new Date();now.setHours(0,0,0,0);
-    container.innerHTML=projects[pi].aggregates.map(function(ag,ai2){return renderAggrCard(pi,ai2,ag,now);}).join('');
+    container.innerHTML=projects[idx].aggregates.map(function(ag,ai2){return renderAggrCard(pnum,ai2,ag,now);}).join('');
   }
 }
-function saveProjectAggr(pi){
-  var allProjects=syncProjectsFromDeals();
-  var p=allProjects[pi];
-  if(p&&p.projectNum&&sb){
-    sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'}).then(function(r){if(r.error)console.error('aggr:',r.error);else console.log('saved OK');});
+async function saveProjectAggr(pnum){
+  var btn=document.getElementById('regSaveBtn_'+pnum);
+  if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f...';btn.disabled=true;btn.style.background='';}
+  var projects=loadProjects();
+  var idx=findProjectIdx(projects,pnum);
+  if(idx<0){if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438';btn.disabled=false;}return;}
+  var p=projects[idx];
+  if(!sb){if(btn){btn.textContent='\u041d\u0435\u043c\u0430\u0454 \u0437\'\u0454\u0434\u043d\u0430\u043d\u043d\u044f';btn.style.background='var(--red)';btn.disabled=false;}return;}
+  try{
+    var r=await sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'});
+    if(r.error) throw r.error;
+    if(btn){btn.textContent='\u2713 \u0417\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043e';btn.style.background='var(--green)';btn.disabled=false;setTimeout(function(){if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438';btn.style.background='';}},2000);}
+  }catch(e){
+    console.error('saveProjectAggr:',e);
+    if(btn){btn.textContent='\u041f\u043e\u043c\u0438\u043b\u043a\u0430 \u2715';btn.style.background='var(--red)';btn.disabled=false;}
+    alert('\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0430\u0433\u0440\u0435\u0433\u0430\u0442\u0438: '+(e.message||e));
   }
-  var btn=document.getElementById('regSaveBtn'+pi);
-  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='Зберегти';btn.style.background='';}},2000);}
-}
-function saveProjectAggr(pi){
-  var allProjects=syncProjectsFromDeals();
-  var p=allProjects[pi];
-  if(p&&p.projectNum&&sb){
-    sb.from('projects').upsert({project_num:p.projectNum,client:p.client,status:p.status,service_type:p.serviceType||'',description:p.desc||'',aggregates:p.aggregates||[],updated_at:new Date().toISOString()},{onConflict:'project_num'}).then(function(r){if(r.error)console.error('aggr save:',r.error);});
-  }
-  var btn=document.getElementById('regSaveBtn'+pi);
-  if(btn){btn.textContent='✓ Збережено';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='Зберегти';btn.style.background='';}},2000);}
-}
-function saveProjectAggr(pi){
-  var btn=document.getElementById('regSaveBtn'+pi);
-  if(btn){btn.textContent='\u2713 \u0417\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043e';btn.style.background='var(--green)';setTimeout(function(){if(btn){btn.textContent='\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438';btn.style.background='';}},2000);}
 }
 function openProdPlan(){
   var projects=loadProjects();
