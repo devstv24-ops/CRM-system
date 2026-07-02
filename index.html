@@ -57,7 +57,7 @@
 <div class="logo"><div class="logo-dot"></div>AVRONIS</div>
 <div class="hbadge">UAE OPS</div>
 <div class="save-badge" id="saveBadge">Ініціалізація...</div>
-<div class="ml"><button class="btn-primary" onclick="openDeal(null)">+ Нова угода</button></div>
+<div class="ml"><button onclick="exportBackup()" title="Завантажити резервну копію всіх даних у файл" style="margin-right:8px;padding:8px 14px;border-radius:8px;border:1px solid var(--border,#D8DCE5);background:#fff;color:var(--text,#1A1D26);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">⬇ Бекап</button><button class="btn-primary" onclick="openDeal(null)">+ Нова угода</button></div>
 </header>
 <main>
 
@@ -457,6 +457,38 @@ async function doLogin(){
 async function doLogout(){
   await sb.auth.signOut();
   deals=[];render();
+}
+async function exportBackup(){
+  if(!sb){alert('\u041d\u0435\u043c\u0430\u0454 \u0437\'\u0454\u0434\u043d\u0430\u043d\u043d\u044f \u0437 \u0431\u0430\u0437\u043e\u044e.');return;}
+  try{
+    var dr=await sb.from('deals').select('*');
+    var pr=await sb.from('projects').select('*');
+    var cr=await sb.from('cf_transactions').select('*');
+    if(dr.error) throw dr.error;
+    if(pr.error) throw pr.error;
+    if(cr.error) throw cr.error;
+    var backup={
+      exported_at:new Date().toISOString(),
+      exported_by:(currentUser&&currentUser.email)||'',
+      deals:dr.data||[],
+      projects:pr.data||[],
+      cf_transactions:cr.data||[]
+    };
+    var json=JSON.stringify(backup,null,2);
+    var blob=new Blob([json],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    var stamp=new Date().toISOString().slice(0,10);
+    a.href=url;
+    a.download='avronis_crm_backup_'+stamp+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    console.error('exportBackup:',e);
+    alert('\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0440\u043e\u0431\u0438\u0442\u0438 \u0431\u0435\u043a\u0430\u043f: '+(e.message||e));
+  }
 }
 async function loadFromSupabase(){
   setBadge('Завантаження...','saving');
