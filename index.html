@@ -388,6 +388,7 @@ function saveQuickActual(){
     if(tx.type==='income'&&tx.status==='plan') tx.status='received';
     else if(tx.type!=='income'&&tx.status==='plan') tx.status='paid';
     saveCfLocal();
+    persistCfTx(tx);
   }
   closeQuickActual();
   renderCF();
@@ -544,7 +545,7 @@ async function loadFromSupabase(){
     deals=(r.data||[]).map(dbToDeal);
     // Load CF transactions
     var rc=await sb.from('cf_transactions').select('*').order('tx_date',{ascending:true});
-    if(!rc.error&&rc.data) cfTxs=rc.data.map(function(t){return {id:'tx_'+t.id,_dbId:t.id,date:t.tx_date,type:t.type,desc:t.description,amount:t.amount,currency:t.currency,actualAmount:t.actual_amount,status:t.status,isCritical:t.is_critical,note:t.note,source:t.source||'manual'};});
+    if(!rc.error&&rc.data) cfTxs=rc.data.map(function(t){return {id:'tx_'+t.id,_dbId:t.id,date:t.tx_date,type:t.type,desc:t.description,category:t.category||'',group:t.tx_group||'',amount:t.amount,currency:t.currency,actual:t.actual_amount,status:t.status,critical:t.is_critical,note:t.note,source:t.source||'manual'};});
     // Load bank balance
     var savedBank=localStorage.getItem('cf_bank_aed');
     if(savedBank) bankAED=parseFloat(savedBank)||null;
@@ -596,10 +597,28 @@ async function syncProjectToDb(d){
   }catch(e){console.error('syncProjectToDb:',e);}
 }
 async function saveCfTxToDb(tx){
-  var row={tx_date:tx.date,type:tx.type,description:tx.desc,amount:tx.amount,currency:tx.currency||'AED',status:tx.status||'plan',is_critical:tx.isCritical||false,note:tx.note||''};
-  var r=await sb.from('cf_transactions').insert(row).select().single();
-  if(r.data) tx._dbId=r.data.id;
+  var row={tx_date:tx.date,type:tx.type,description:tx.desc,amount:tx.amount,currency:tx.currency||'AED',actual_amount:(tx.actual!==undefined&&tx.actual!==null&&tx.actual!=='')?parseFloat(tx.actual):null,status:tx.status||'plan',is_critical:!!tx.critical,note:tx.note||'',category:tx.category||'',tx_group:tx.group||''};
+  var r;
+  if(tx._dbId){
+    r=await sb.from('cf_transactions').update(row).eq('id',tx._dbId).select().single();
+  } else {
+    r=await sb.from('cf_transactions').insert(row).select().single();
+    if(r.data) tx._dbId=r.data.id;
+  }
   return r;
+}
+async function persistCfTx(tx){
+  if(!sb||!tx) return;
+  setBadge('Збереження...','saving');
+  try{
+    var r=await saveCfTxToDb(tx);
+    if(r.error) throw r.error;
+    setBadge('Збережено ✓','ok');
+  }catch(e){
+    console.error('persistCfTx:',e);
+    setBadge('Помилка збереження','err');
+    alert('Не вдалося зберегти транзакцію Cash Flow в базі: '+(e.message||e)+'\n\nПеревір, чи додані колонки category/tx_group в таблиці cf_transactions (SQL: alter table cf_transactions add column if not exists category text; alter table cf_transactions add column if not exists tx_group text;)');
+  }
 }
 async function deleteCfTxFromDb(dbId){
   await sb.from('cf_transactions').delete().eq('id',dbId);
@@ -1255,6 +1274,7 @@ function saveQA(){
   else if(tx.type!=='income'&&tx.status==='topay') tx.status='paid';
   else if(tx.status==='plan') tx.status=tx.type==='income'?'received':'paid';
   saveCfLocal();closeQA();renderCF();
+  persistCfTx(tx);
 }
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&qaCurrentId)saveQA();if(e.key==='Escape'&&qaCurrentId)closeQA();});
 
@@ -1725,15 +1745,23 @@ function cycleCfStatus(id){
   var idx2=cycle.indexOf(cur);
   tx.status=cycle[(idx2+1)%cycle.length];
   saveCfLocal();renderCF();
+  persistCfTx(tx);
 }
 function toggleCfCritical(id){
   var tx=cfTxs.find(function(t){return t.id===id;});
   if(!tx)return;
   tx.critical=!tx.critical;
   saveCfLocal();renderCF();
+  persistCfTx(tx);
 }
 function toggleCfW(w){var el=document.getElementById('cfw'+w);if(el){el.classList.toggle('open');if(el.classList.contains('open'))cfOpenWeeks.add(w);else cfOpenWeeks.delete(w);}}
-function delCfTx(id){if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044e?'))return;cfTxs=cfTxs.filter(function(t){return t.id!==id;});saveCfLocal();renderCF();}
+function delCfTx(id){
+  if(!confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u044e?'))return;
+  var tx=cfTxs.find(function(t){return t.id===id;});
+  cfTxs=cfTxs.filter(function(t){return t.id!==id;});
+  saveCfLocal();renderCF();
+  if(tx&&tx._dbId) deleteCfTxFromDb(tx._dbId);
+}
 function dupCfTx(id){var tx=cfTxs.find(function(t){return t.id===id;});if(!tx)return;var copy=Object.assign({},tx,{id:Date.now().toString()+Math.random().toString(36).slice(2),created:new Date().toISOString(),actual:undefined,status:'plan'});cfEditId=null;openCfModal(copy.date,copy.type);setTimeout(function(){var d=document.getElementById('cfDesc');var g=document.getElementById('cfGroup');var c=document.getElementById('cfCategory');var a=document.getElementById('cfAmount');var n=document.getElementById('cfNote');var cr=document.getElementById('cfCritical');if(d)d.value=copy.desc||'';if(g&&copy.group)g.value=copy.group;if(c&&copy.category)c.value=copy.category;if(a)a.value=copy.amount||'';if(n)n.value=copy.note||'';if(cr)cr.checked=!!copy.critical;setCfCur(copy.currency||'AED');updateCfStatus();var titleEl=document.querySelector('.cf-mtitle');if(titleEl)titleEl.textContent='\u0414\u0443\u0431\u043b\u0456\u043a\u0430\u0442 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u0457';},100);}
 function setCfWeeksForward(v){cfWeeksForward=parseInt(v)||16;localStorage.setItem('cf_weeks_forward',String(cfWeeksForward));renderCF();}
 function setCfMonth(m){cfMonth=m;renderCF();}
@@ -2171,17 +2199,21 @@ function saveCfTx(){
   var stEl=document.getElementById('cfStatus');
   var status=stEl?stEl.value:'plan';
   if(!date||!desc||!amount){alert('Заповніть: дата, опис, сума');return;}
+  var tx;
   if(cfEditId!==null){
     var idx=cfTxs.findIndex(function(t){return t.id===cfEditId;});
     if(idx>=0){
       cfTxs[idx]=Object.assign(cfTxs[idx],{date:date,type:type,group:group,category:category,desc:desc,amount:amount,actual:actual||undefined,note:note,critical:critical,status:status,currency:cfCur});
+      tx=cfTxs[idx];
     }
   } else {
-    cfTxs.push({id:Date.now().toString()+Math.random().toString(36).slice(2),date:date,type:type,group:group,category:category,desc:desc,amount:amount,actual:actual||undefined,note:note,critical:critical,status:status,currency:cfCur,created:new Date().toISOString()});
+    tx={id:Date.now().toString()+Math.random().toString(36).slice(2),date:date,type:type,group:group,category:category,desc:desc,amount:amount,actual:actual||undefined,note:note,critical:critical,status:status,currency:cfCur,created:new Date().toISOString()};
+    cfTxs.push(tx);
   }
   saveCfLocal();
   closeCfModal();
   renderCF();
+  persistCfTx(tx);
 }
 
 init();
